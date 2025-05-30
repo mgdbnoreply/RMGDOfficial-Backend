@@ -38,7 +38,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       label: 'Console Collection',
       icon: Database,
       description: 'Physical device preservation',
-      comingSoon: true
+      comingSoon: false
     },
     {
       id: 'analytics',
