@@ -11,7 +11,7 @@ interface GameCardProps {
 
 export default function GameCard({ game, viewMode, onEdit, onView, onDelete }: GameCardProps) {
   const getGenreColor = (genre: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       'Action': 'bg-red-100 text-red-800 border-red-200',
       'Adventure': 'bg-blue-100 text-blue-800 border-blue-200',
       'Puzzle': 'bg-purple-100 text-purple-800 border-purple-200',

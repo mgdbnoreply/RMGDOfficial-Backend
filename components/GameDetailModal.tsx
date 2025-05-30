@@ -9,18 +9,33 @@ interface GameDetailModalProps {
 }
 
 export default function GameDetailModal({ game, onClose, onEdit, onDelete }: GameDetailModalProps) {
+  const genreList = [
+    'Action',
+    'Adventure',
+    'Puzzle',
+    'Strategy',
+    'Sports',
+    'Racing',
+    'Simulation',
+    'Arcade',
+  ] as const;
+  type Genre = typeof genreList[number];
+
   const getGenreColor = (genre: string) => {
-    const colors = {
-      'Action': 'bg-red-100 text-red-800 border-red-200',
-      'Adventure': 'bg-blue-100 text-blue-800 border-blue-200',
-      'Puzzle': 'bg-purple-100 text-purple-800 border-purple-200',
-      'Strategy': 'bg-green-100 text-green-800 border-green-200',
-      'Sports': 'bg-orange-100 text-orange-800 border-orange-200',
-      'Racing': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      'Simulation': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'Arcade': 'bg-pink-100 text-pink-800 border-pink-200',
+    const colors: Record<Genre, string> = {
+      Action: 'bg-red-100 text-red-800 border-red-200',
+      Adventure: 'bg-blue-100 text-blue-800 border-blue-200',
+      Puzzle: 'bg-purple-100 text-purple-800 border-purple-200',
+      Strategy: 'bg-green-100 text-green-800 border-green-200',
+      Sports: 'bg-orange-100 text-orange-800 border-orange-200',
+      Racing: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      Simulation: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      Arcade: 'bg-pink-100 text-pink-800 border-pink-200',
     };
-    return colors[genre] || 'bg-gray-100 text-gray-800 border-gray-200';
+    if ((genreList as readonly string[]).includes(genre)) {
+      return colors[genre as Genre];
+    }
+    return 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getYearColor = (year: string) => {
