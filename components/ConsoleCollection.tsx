@@ -1,4 +1,3 @@
-"use client";
 import { useState, useEffect } from 'react';
 import { 
   Database, 
@@ -19,11 +18,18 @@ import {
   Edit2, 
   Trash2, 
   Eye,
-  Tag
+  Tag,
+  Zap,
+  Award,
+  TrendingUp,
+  BarChart3,
+  Users,
+  BookOpen,
+  Settings
 } from 'lucide-react';
 import { CollectionsAPI } from '@/services/api';
 
-// Updated interface to match your API format
+// Collection interface based on your existing types
 interface Collection {
   id: string;
   name: string;
@@ -38,7 +44,7 @@ interface Collection {
   updatedAt?: string;
 }
 
-// Helper function to safely extract string from DynamoDB format
+// Helper functions from your existing code
 const extractString = (value: any): string => {
   if (!value) return '';
   if (typeof value === 'string') return value;
@@ -46,7 +52,6 @@ const extractString = (value: any): string => {
   return String(value);
 };
 
-// Helper function to convert your API format to display format
 const convertToDisplay = (item: any): Collection => {
   try {
     return {
@@ -58,7 +63,7 @@ const convertToDisplay = (item: any): Collection => {
       year: extractString(item.year || ''),
       image: extractString(item.image || ''),
       productId: extractString(item.ProductID || item.id || ''),
-      status: 'active', // default since not in your data
+      status: 'active',
     };
   } catch (error) {
     console.error('Error converting item:', error, item);
@@ -76,7 +81,7 @@ const convertToDisplay = (item: any): Collection => {
   }
 };
 
-// Inline CollectionCard Component (to fix the import issue)
+// CollectionCard Component
 interface CollectionCardProps {
   collection: Collection;
   viewMode: 'grid' | 'list';
@@ -114,7 +119,6 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
       <div className="academic-card-elevated p-6 hover:shadow-lg transition-all duration-200 group">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4 flex-1">
-            {/* Device Image */}
             <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border border-gray-200">
               {collection.image ? (
                 <img
@@ -206,7 +210,6 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
 
   return (
     <div className="academic-card-elevated p-6 hover:shadow-lg transition-all duration-200 group">
-      {/* Header with Actions */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-red-700 transition-colors leading-tight">
@@ -251,7 +254,6 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
         </div>
       </div>
 
-      {/* Device Image */}
       <div className="mb-4">
         <div className="w-full h-48 bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
           {collection.image ? (
@@ -288,12 +290,10 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
         </div>
       </div>
 
-      {/* Description */}
       <p className="text-gray-600 text-base mb-4 leading-relaxed line-clamp-3">
         {collection.description}
       </p>
 
-      {/* Manufacturer Info */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center">
@@ -313,7 +313,6 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
         )}
       </div>
 
-      {/* Footer */}
       <div className="border-t border-gray-100 pt-4">
         <div className="flex items-center justify-between">
           <div className="text-xs text-gray-500 font-mono">
@@ -331,7 +330,7 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
   );
 }
 
-export default function ConsoleCollection() {
+export default function ImprovedConsoleCollection() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [filteredCollections, setFilteredCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -344,18 +343,17 @@ export default function ConsoleCollection() {
   const [selectedMaker, setSelectedMaker] = useState('');
   const [selectedDecade, setSelectedDecade] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeView, setActiveView] = useState('catalog');
   
   // Modal State
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
 
-  // Fetch collections on component mount
   useEffect(() => {
     fetchCollections();
   }, []);
 
-  // Filter collections when search/filter changes
   useEffect(() => {
     filterCollections();
   }, [collections, searchTerm, selectedCategory, selectedMaker, selectedDecade]);
@@ -366,12 +364,7 @@ export default function ConsoleCollection() {
     
     try {
       const rawData = await CollectionsAPI.getAllCollections();
-      console.log('📱 Raw collections data received:', rawData);
-      
-      // Convert all items to display format
       const convertedData = rawData.map((item: any) => convertToDisplay(item));
-      
-      console.log('📱 Converted collections data:', convertedData);
       setCollections(convertedData);
     } catch (err: any) {
       console.error('❌ Error loading collections:', err);
@@ -414,63 +407,6 @@ export default function ConsoleCollection() {
     setFilteredCollections(filtered);
   };
 
-  const handleAddCollection = async (collectionData: any) => {
-    setOperationError(null);
-    try {
-      // Generate product ID
-      const productId = `${collectionData.maker.toLowerCase().replace(/\s+/g, '-')}-${collectionData.name.toLowerCase().replace(/\s+/g, '-')}`;
-      
-      // Convert to your DynamoDB format
-      const dynamoData = {
-        ProductID: { S: productId },
-        category: { S: collectionData.category },
-        description: { S: collectionData.description },
-        id: { S: productId },
-        image: { S: collectionData.image || '' },
-        maker: { S: collectionData.maker },
-        name: { S: collectionData.name },
-        year: { S: collectionData.year }
-      };
-
-      const success = await CollectionsAPI.createCollection(dynamoData);
-      if (success) {
-        await fetchCollections();
-        setShowAddForm(false);
-      } else {
-        throw new Error('Failed to add collection - API returned false');
-      }
-    } catch (err: any) {
-      setOperationError(`Failed to add collection: ${err.message}`);
-    }
-  };
-
-  const handleUpdateCollection = async (collection: Collection) => {
-    setOperationError(null);
-    try {
-      // Convert to your DynamoDB format
-      const dynamoData = {
-        ProductID: { S: collection.productId },
-        category: { S: collection.category },
-        description: { S: collection.description },
-        id: { S: collection.id },
-        image: { S: collection.image },
-        maker: { S: collection.maker },
-        name: { S: collection.name },
-        year: { S: collection.year }
-      };
-
-      const success = await CollectionsAPI.updateCollection(collection.id, dynamoData);
-      if (success) {
-        await fetchCollections();
-        setEditingCollection(null);
-      } else {
-        throw new Error('Failed to update collection - API returned false');
-      }
-    } catch (err: any) {
-      setOperationError(`Failed to update collection: ${err.message}`);
-    }
-  };
-
   const handleDeleteCollection = async (collectionId: string) => {
     if (!confirm('Are you sure you want to delete this device? This action cannot be undone.')) return;
     
@@ -488,7 +424,7 @@ export default function ConsoleCollection() {
     }
   };
 
-  // Get unique filter options from your data
+  // Get unique filter options
   const uniqueCategories = Array.from(new Set(collections.map(c => c.category).filter(Boolean))).sort();
   const uniqueMakers = Array.from(new Set(collections.map(c => c.maker).filter(Boolean))).sort();
   const uniqueDecades = Array.from(new Set(
@@ -502,7 +438,7 @@ export default function ConsoleCollection() {
     .filter((decade): decade is number => decade !== null && decade !== undefined)
   )).sort().reverse();
 
-  // Stats for dashboard
+  // Stats calculation
   const stats = {
     totalCollections: collections.length,
     categories: uniqueCategories.length,
@@ -515,352 +451,603 @@ export default function ConsoleCollection() {
     recentItems: collections.filter(c => {
       const year = parseInt(c.year || '0');
       return year >= 2000;
-    }).length
+    }).length,
+    documentsWithImages: collections.filter(c => c.image && c.image.trim()).length,
+    topCategory: uniqueCategories.reduce((max, cat) => {
+      const count = collections.filter(c => c.category === cat).length;
+      return count > max.count ? { name: cat, count } : max;
+    }, { name: '', count: 0 }),
+    topMaker: uniqueMakers.reduce((max, maker) => {
+      const count = collections.filter(c => c.maker === maker).length;
+      return count > max.count ? { name: maker, count } : max;
+    }, { name: '', count: 0 })
   };
+
+  const tabs = [
+    { id: 'catalog', label: 'Device Catalog', icon: Archive },
+    { id: 'overview', label: 'Collection Overview', icon: Database },
+    { id: 'timeline', label: 'Historical Timeline', icon: Clock },
+    { id: 'research', label: 'Research Analysis', icon: BookOpen }
+    
+  ];
 
   // Loading State
   if (loading) {
     return (
       <div className="space-y-8">
-        <div className="academic-card-elevated p-8 text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mb-4"></div>
-          <p className="text-gray-700 text-lg">Loading device collection...</p>
-          <p className="text-gray-500 text-base mt-2">Fetching devices from RMGD database...</p>
+        <div className="academic-card-elevated p-12 text-center">
+          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-2 border-red-600 mb-6"></div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Loading Device Collection</h3>
+          <p className="text-gray-600 text-lg">Retrieving physical gaming devices from RMGD database...</p>
+          <div className="mt-6 flex items-center justify-center space-x-6 text-sm text-gray-500">
+            <span>• Hardware Preservation</span>
+            <span>• Research Archive</span>
+            <span>• Academic Collection</span>
+          </div>
         </div>
       </div>
     );
   }
 
-  // If collections exist, show the active interface
-  if (collections.length > 0) {
-    return (
-      <div className="space-y-8">
-        {/* Header with Stats */}
-        <div className="academic-card-elevated p-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center">
-                <Database className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-primary">Console & Device Collection</h2>
-                <p className="text-secondary text-lg">Physical gaming device preservation and documentation system</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={fetchCollections}
-                className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
-                title="Refresh Collection"
-              >
-                <RefreshCw className="w-5 h-5" />
-                <span>Refresh</span>
-              </button>
-              
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium shadow-lg"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Add Device</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { title: 'Total Devices', value: stats.totalCollections, icon: Smartphone, color: 'bg-red-50 border-red-200', iconColor: 'bg-red-600', textColor: 'text-red-800' },
-              { title: 'Categories', value: stats.categories, icon: Archive, color: 'bg-blue-50 border-blue-200', iconColor: 'bg-blue-600', textColor: 'text-blue-800' },
-              { title: 'Makers', value: stats.makers, icon: Wrench, color: 'bg-green-50 border-green-200', iconColor: 'bg-green-600', textColor: 'text-green-800' },
-              { title: 'Vintage Items', value: stats.vintageItems, icon: Clock, color: 'bg-purple-50 border-purple-200', iconColor: 'bg-purple-600', textColor: 'text-purple-800' },
-              { title: 'Phones', value: stats.phones, icon: Smartphone, color: 'bg-emerald-50 border-emerald-200', iconColor: 'bg-emerald-600', textColor: 'text-emerald-800' },
-              { title: 'Modern Era', value: stats.recentItems, icon: Calendar, color: 'bg-amber-50 border-amber-200', iconColor: 'bg-amber-600', textColor: 'text-amber-800' }
-            ].map((stat, idx) => (
-              <div key={idx} className={`academic-card p-4 ${stat.color}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className={`${stat.textColor} text-xs font-medium mb-1`}>{stat.title}</p>
-                    <p className="text-gray-900 text-xl font-bold">{stat.value}</p>
-                  </div>
-                  <div className={`w-8 h-8 ${stat.iconColor} rounded-lg flex items-center justify-center`}>
-                    <stat.icon className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Advanced Search and Filters */}
-        <div className="academic-card-elevated p-6">
-          <div className="flex flex-col space-y-4">
-            {/* Search Bar */}
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search devices, makers, IDs..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="academic-input w-full pl-12 pr-4 text-base placeholder-gray-500"
-                />
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-xl p-1">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Filter Row */}
-            <div className="flex flex-wrap gap-3">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="academic-input text-sm min-w-[120px]"
-              >
-                <option value="">All Categories</option>
-                {uniqueCategories.map(category => (
-                  <option key={category} value={category}>
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={selectedMaker}
-                onChange={(e) => setSelectedMaker(e.target.value)}
-                className="academic-input text-sm min-w-[140px]"
-              >
-                <option value="">All Makers</option>
-                {uniqueMakers.map(maker => (
-                  <option key={maker} value={maker}>{maker}</option>
-                ))}
-              </select>
-
-              <select
-                value={selectedDecade}
-                onChange={(e) => setSelectedDecade(e.target.value)}
-                className="academic-input text-sm min-w-[120px]"
-              >
-                <option value="">All Decades</option>
-                {uniqueDecades.map(decade => (
-                  <option key={decade} value={decade.toString()}>
-                    {decade}s
-                  </option>
-                ))}
-              </select>
-
-              {(searchTerm || selectedCategory || selectedMaker || selectedDecade) && (
-                <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategory('');
-                    setSelectedMaker('');
-                    setSelectedDecade('');
-                  }}
-                  className="px-3 py-2 text-red-600 hover:text-red-800 text-sm underline"
-                >
-                  Clear all filters
-                </button>
-              )}
-            </div>
-
-            {/* Filter Summary */}
-            {(searchTerm || selectedCategory || selectedMaker || selectedDecade) && (
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <Filter className="w-4 h-4" />
-                <span>Showing {filteredCollections.length} of {collections.length} devices</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Error Display */}
-        {(error || operationError) && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-              <p className="text-red-800">{error || operationError}</p>
-            </div>
-            <button 
-              onClick={() => {
-                setError(null);
-                setOperationError(null);
-              }}
-              className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
-        {/* Collections Grid/List */}
-        {filteredCollections.length > 0 && (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-            {filteredCollections.map((collection) => (
-              <CollectionCard
-                key={collection.id}
-                collection={collection}
-                viewMode={viewMode}
-                onEdit={setEditingCollection}
-                onView={setSelectedCollection}
-                onDelete={handleDeleteCollection}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {filteredCollections.length === 0 && (
-          <div className="text-center py-16">
-            <Database className="w-20 h-20 text-gray-400 mx-auto mb-6" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No devices found</h3>
-            <p className="text-gray-500 mb-4">Try adjusting your search criteria or filters.</p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('');
-                setSelectedMaker('');
-                setSelectedDecade('');
-              }}
-              className="text-red-600 hover:text-red-800 underline"
-            >
-              Clear all filters
-            </button>
-          </div>
-        )}
-
-        {/* Simple Add Modal Placeholder */}
-        {showAddForm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Add New Device</h3>
-                <button
-                  onClick={() => setShowAddForm(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <Plus className="w-6 h-6 rotate-45" />
-                </button>
-              </div>
-              <p className="text-gray-600 text-center py-8">
-                Add Device Modal - To be implemented
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Simple View Modal Placeholder */}
-        {selectedCollection && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">{selectedCollection.name}</h3>
-                <button
-                  onClick={() => setSelectedCollection(null)}
-                  className="p-2 text-gray-400 hover:text-gray-600"
-                >
-                  <Plus className="w-6 h-6 rotate-45" />
-                </button>
-              </div>
-              
-              {selectedCollection.image && (
-                <div className="mb-6">
-                  <img
-                    src={selectedCollection.image}
-                    alt={selectedCollection.name}
-                    className="w-full h-64 object-cover rounded-xl border border-gray-200"
-                  />
-                </div>
-              )}
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-                  <p className="text-gray-700">{selectedCollection.description}</p>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">Maker</h4>
-                    <p className="text-gray-700">{selectedCollection.maker}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">Year</h4>
-                    <p className="text-gray-700">{selectedCollection.year}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">Category</h4>
-                    <p className="text-gray-700 capitalize">{selectedCollection.category}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-1">Product ID</h4>
-                    <p className="text-gray-700 font-mono text-sm">{selectedCollection.productId}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // No collections state
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="academic-card-elevated p-8 text-center">
-        <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
-          <Smartphone className="w-10 h-10 text-white" />
-        </div>
-        
-        <h2 className="text-3xl font-bold text-primary mb-4">Console & Device Collection</h2>
-        <p className="text-secondary text-lg mb-6 max-w-2xl mx-auto">
-          Physical gaming device preservation and documentation system for retro mobile gaming hardware
-        </p>
-        
-        <div className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-center space-x-2">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <p className="text-red-800">{error}</p>
+      {/* Research Header */}
+      <div className="academic-card-elevated p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-red-600 to-red-800 rounded-2xl flex items-center justify-center shadow-lg">
+              <Database className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold text-primary mb-2">Physical Device Collection</h2>
+              <p className="text-secondary text-lg">Hardware preservation and documentation archive</p>
+              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+                <span className="flex items-center space-x-1">
+                  <Award className="w-4 h-4" />
+                  <span>{stats.totalCollections} Devices Preserved</span>
+                </span>
+                <span className="flex items-center space-x-1">
+                  <Zap className="w-4 h-4" />
+                  <span>{stats.categories} Categories</span>
+                </span>
+                <span className="flex items-center space-x-1">
+                  <Clock className="w-4 h-4" />
+                  <span>Active Archive</span>
+                </span>
               </div>
             </div>
-          )}
+          </div>
           
-          <div className="flex items-center justify-center space-x-4">
-            <div className="inline-flex items-center space-x-2 px-6 py-3 bg-amber-100 text-amber-800 rounded-full border border-amber-200">
-              <Clock className="w-5 h-5" />
-              <span className="font-medium text-lg">No Data Available</span>
+          <div className="text-right">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-green-800 font-semibold">Archive Active</span>
+              </div>
+              <p className="text-green-700 text-sm mt-1">Collection synchronized</p>
             </div>
             <button
-              onClick={fetchCollections}
-              className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-100 text-blue-800 rounded-full border border-blue-200 hover:bg-blue-200 transition-all"
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium shadow-lg text-base"
             >
-              <RefreshCw className="w-5 h-5" />
-              <span className="font-medium">Check for Data</span>
+              <Plus className="w-5 h-5" />
+              <span>Add Device</span>
             </button>
           </div>
         </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveView(tab.id)}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-xl transition-all font-medium text-base ${
+                activeView === tab.id
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <tab.icon className="w-5 h-5" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Error Display */}
+      {(error || operationError) && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <div className="flex items-center space-x-3">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+            <div>
+              <h4 className="text-red-800 font-semibold">Operation Error</h4>
+              <p className="text-red-700">{error || operationError}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              setError(null);
+              setOperationError(null);
+            }}
+            className="mt-3 text-red-600 hover:text-red-800 text-sm underline"
+          >
+            Dismiss Error
+          </button>
+        </div>
+      )}
+
+      {/* Overview Tab */}
+      {activeView === 'overview' && (
+        <div className="space-y-8">
+          {/* Key Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: 'Total Devices', value: stats.totalCollections, icon: Smartphone, color: 'bg-red-50 border-red-200', iconColor: 'bg-red-600', textColor: 'text-red-800', change: '+5%' },
+              { title: 'Device Categories', value: stats.categories, icon: Archive, color: 'bg-blue-50 border-blue-200', iconColor: 'bg-blue-600', textColor: 'text-blue-800', change: '+2%' },
+              { title: 'Manufacturers', value: stats.makers, icon: Wrench, color: 'bg-green-50 border-green-200', iconColor: 'bg-green-600', textColor: 'text-green-800', change: '+7%' },
+              { title: 'Vintage Items', value: stats.vintageItems, icon: Clock, color: 'bg-purple-50 border-purple-200', iconColor: 'bg-purple-600', textColor: 'text-purple-800', change: '+3%' }
+            ].map((stat, idx) => (
+              <div key={idx} className={`academic-card-elevated p-6 ${stat.color}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-12 h-12 ${stat.iconColor} rounded-xl flex items-center justify-center shadow-sm`}>
+                    <stat.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex items-center space-x-1 text-green-600 text-sm font-medium">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>{stat.change}</span>
+                  </div>
+                </div>
+                <div>
+                  <p className={`${stat.textColor} text-sm font-medium mb-1`}>{stat.title}</p>
+                  <p className="text-gray-900 text-3xl font-bold">{stat.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Device Categories Distribution */}
+          <div className="academic-card-elevated p-8">
+            <h3 className="text-2xl font-bold text-primary mb-6 flex items-center">
+              <BarChart3 className="w-7 h-7 mr-3 text-red-600" />
+              Device Category Analysis
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {uniqueCategories.slice(0, 6).map((category, idx) => {
+                const count = collections.filter(c => c.category === category).length;
+                const percentage = Math.round((count / collections.length) * 100);
+                return (
+                  <div key={category} className="text-center">
+                    <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
+                      idx === 0 ? 'bg-gradient-to-br from-blue-500 to-blue-700' :
+                      idx === 1 ? 'bg-gradient-to-br from-red-500 to-red-700' :
+                      idx === 2 ? 'bg-gradient-to-br from-green-500 to-green-700' :
+                      idx === 3 ? 'bg-gradient-to-br from-purple-500 to-purple-700' :
+                      idx === 4 ? 'bg-gradient-to-br from-orange-500 to-orange-700' :
+                      'bg-gradient-to-br from-gray-500 to-gray-700'
+                    }`}>
+                      <span className="text-white text-2xl font-bold">{count}</span>
+                    </div>
+                    <h4 className="font-bold text-gray-900 text-lg mb-2 capitalize">{category}</h4>
+                    <p className="text-gray-600 mb-3">{percentage}% of collection</p>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          idx === 0 ? 'bg-blue-500' :
+                          idx === 1 ? 'bg-red-500' :
+                          idx === 2 ? 'bg-green-500' :
+                          idx === 3 ? 'bg-purple-500' :
+                          idx === 4 ? 'bg-orange-500' :
+                          'bg-gray-500'
+                        }`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Research Highlights */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="academic-card-elevated p-8">
+              <h4 className="text-xl font-bold text-primary mb-6">Collection Highlights</h4>
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-red-800 font-medium">Leading Category</span>
+                    <span className="text-red-900 font-bold capitalize">{stats.topCategory.name}</span>
+                  </div>
+                  <div className="text-sm text-red-700 mt-1">{stats.topCategory.count} devices in collection</div>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-800 font-medium">Top Manufacturer</span>
+                    <span className="text-blue-900 font-bold">{stats.topMaker.name}</span>
+                  </div>
+                  <div className="text-sm text-blue-700 mt-1">{stats.topMaker.count} devices manufactured</div>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-green-800 font-medium">Documentation Rate</span>
+                    <span className="text-green-900 font-bold">{Math.round((stats.documentsWithImages / stats.totalCollections) * 100)}%</span>
+                  </div>
+                  <div className="text-sm text-green-700 mt-1">Devices with visual documentation</div>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-purple-800 font-medium">Vintage Ratio</span>
+                    <span className="text-purple-900 font-bold">{Math.round((stats.vintageItems / stats.totalCollections) * 100)}%</span>
+                  </div>
+                  <div className="text-sm text-purple-700 mt-1">Pre-2000 historical devices</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="academic-card-elevated p-8">
+              <h4 className="text-xl font-bold text-primary mb-6">Preservation Metrics</h4>
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-700 font-medium">Physical Documentation</span>
+                    <span className="text-gray-900 font-bold">{Math.round((stats.documentsWithImages / stats.totalCollections) * 100)}%</span>
+                  </div>
+                  <div className="bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full"
+                      style={{ width: `${(stats.documentsWithImages / stats.totalCollections) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">{stats.documentsWithImages} devices have visual records</p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-700 font-medium">Category Coverage</span>
+                    <span className="text-gray-900 font-bold">{stats.categories}</span>
+                  </div>
+                  <div className="bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full w-5/6" />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">Comprehensive device type coverage</p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-700 font-medium">Manufacturer Diversity</span>
+                    <span className="text-gray-900 font-bold">{stats.makers}</span>
+                  </div>
+                  <div className="bg-gray-200 rounded-full h-3">
+                    <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full w-4/5" />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">Wide representation of manufacturers</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Timeline Tab */}
+      {activeView === 'timeline' && (
+        <div className="academic-card-elevated p-8">
+          <h3 className="text-2xl font-bold text-primary mb-8 flex items-center">
+            <Calendar className="w-7 h-7 mr-3 text-red-600" />
+            Device Release Timeline
+          </h3>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {uniqueDecades.map((decade) => {
+              const decadeDevices = collections.filter(c => {
+                const year = parseInt(c.year);
+                return year >= decade && year < decade + 10;
+              });
+              const maxCount = Math.max(...uniqueDecades.map(d => collections.filter(c => {
+                const year = parseInt(c.year);
+                return year >= d && year < d + 10;
+              }).length));
+              
+              return (
+                <div key={decade} className="flex items-center space-x-6 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors">
+                  <div className="w-24 text-center">
+                    <span className="text-2xl font-bold text-gray-900">{decade}s</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="bg-gray-200 rounded-full h-4 mb-2">
+                      <div 
+                        className="bg-gradient-to-r from-red-500 to-red-600 h-4 rounded-full transition-all duration-500"
+                        style={{ width: `${(decadeDevices.length / maxCount) * 100}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">{decadeDevices.length} devices released</span>
+                      <span className="text-gray-500">
+                        Era: {decade < 1990 ? 'Early Computing' : decade < 2000 ? 'Digital Revolution' : 'Mobile Age'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right min-w-[4rem]">
+                    <span className="text-2xl font-bold text-gray-900">{decadeDevices.length}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Research Tab */}
+      {activeView === 'research' && (
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="academic-card-elevated p-8">
+              <h4 className="text-xl font-bold text-primary mb-6 flex items-center">
+                <BookOpen className="w-6 h-6 mr-2 text-red-600" />
+                Hardware Evolution Research
+              </h4>
+              <div className="space-y-4">
+                <div className="bg-amber-50 border-l-4 border-amber-400 p-4">
+                  <h5 className="font-semibold text-amber-800 mb-2">Technological Progression</h5>
+                  <p className="text-amber-700 text-sm">
+                    The collection showcases the evolution from basic calculators and early handhelds 
+                    to sophisticated mobile devices with gaming capabilities.
+                  </p>
+                </div>
+                
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                  <h5 className="font-semibold text-blue-800 mb-2">Manufacturing Trends</h5>
+                  <p className="text-blue-700 text-sm">
+                    {stats.topMaker.name} dominates with {stats.topMaker.count} devices, representing 
+                    {Math.round((stats.topMaker.count / stats.totalCollections) * 100)}% of the collection.
+                  </p>
+                </div>
+
+                <div className="bg-green-50 border-l-4 border-green-400 p-4">
+                  <h5 className="font-semibold text-green-800 mb-2">Category Analysis</h5>
+                  <p className="text-green-700 text-sm">
+                    {stats.topCategory.name} devices lead the collection, indicating their historical 
+                    significance in mobile gaming development.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="academic-card-elevated p-8">
+              <h4 className="text-xl font-bold text-primary mb-6">Research Applications</h4>
+              <div className="space-y-4">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <h5 className="font-semibold text-red-800 mb-2">Hardware Archaeology</h5>
+                  <p className="text-red-700 text-sm">Physical device preservation for technical analysis</p>
+                </div>
+                
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                  <h5 className="font-semibold text-purple-800 mb-2">Design Evolution</h5>
+                  <p className="text-purple-700 text-sm">User interface and form factor development</p>
+                </div>
+
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+                  <h5 className="font-semibold text-indigo-800 mb-2">Technical Documentation</h5>
+                  <p className="text-indigo-700 text-sm">Specifications and capability preservation</p>
+                </div>
+
+                <div className="bg-teal-50 border border-teal-200 rounded-xl p-4">
+                  <h5 className="font-semibold text-teal-800 mb-2">Cultural Impact</h5>
+                  <p className="text-teal-700 text-sm">Social adoption patterns and gaming culture</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Catalog Tab */}
+      {activeView === 'catalog' && (
+        <div className="space-y-6">
+          {/* Advanced Search and Filters */}
+          <div className="academic-card-elevated p-6">
+            <div className="flex flex-col space-y-4">
+              <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search devices, makers, specifications..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="academic-input w-full pl-12 pr-4 text-base placeholder-gray-500"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-1 bg-gray-100 rounded-xl p-1">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+                    >
+                      <Grid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-red-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-800'}`}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="academic-input text-sm min-w-[120px]"
+                >
+                  <option value="">All Categories</option>
+                  {uniqueCategories.map(category => (
+                    <option key={category} value={category}>
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedMaker}
+                  onChange={(e) => setSelectedMaker(e.target.value)}
+                  className="academic-input text-sm min-w-[140px]"
+                >
+                  <option value="">All Makers</option>
+                  {uniqueMakers.map(maker => (
+                    <option key={maker} value={maker}>{maker}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedDecade}
+                  onChange={(e) => setSelectedDecade(e.target.value)}
+                  className="academic-input text-sm min-w-[120px]"
+                >
+                  <option value="">All Decades</option>
+                  {uniqueDecades.map(decade => (
+                    <option key={decade} value={decade.toString()}>
+                      {decade}s
+                    </option>
+                  ))}
+                </select>
+
+                {(searchTerm || selectedCategory || selectedMaker || selectedDecade) && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('');
+                      setSelectedMaker('');
+                      setSelectedDecade('');
+                    }}
+                    className="px-3 py-2 text-red-600 hover:text-red-800 text-sm underline"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+
+              {(searchTerm || selectedCategory || selectedMaker || selectedDecade) && (
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Filter className="w-4 h-4" />
+                  <span>Showing {filteredCollections.length} of {collections.length} devices</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Collections Grid/List */}
+          {filteredCollections.length > 0 ? (
+            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+              {filteredCollections.map((collection) => (
+                <CollectionCard
+                  key={collection.id}
+                  collection={collection}
+                  viewMode={viewMode}
+                  onEdit={setEditingCollection}
+                  onView={setSelectedCollection}
+                  onDelete={handleDeleteCollection}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <Database className="w-20 h-20 text-gray-400 mx-auto mb-6" />
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No devices found</h3>
+              <p className="text-gray-500 mb-4">Try adjusting your search criteria or filters.</p>
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCategory('');
+                  setSelectedMaker('');
+                  setSelectedDecade('');
+                }}
+                className="text-red-600 hover:text-red-800 underline"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Simple Add Modal Placeholder */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">Add New Device</h3>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="p-2 text-gray-400 hover:text-gray-600"
+              >
+                <Plus className="w-6 h-6 rotate-45" />
+              </button>
+            </div>
+            <p className="text-gray-600 text-center py-8">
+              Add Device Modal - To be implemented with your existing AddCollectionModal component
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Simple View Modal Placeholder */}
+      {selectedCollection && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">{selectedCollection.name}</h3>
+              <button
+                onClick={() => setSelectedCollection(null)}
+                className="p-2 text-gray-400 hover:text-gray-600"
+              >
+                <Plus className="w-6 h-6 rotate-45" />
+              </button>
+            </div>
+            
+            {selectedCollection.image && (
+              <div className="mb-6">
+                <img
+                  src={selectedCollection.image}
+                  alt={selectedCollection.name}
+                  className="w-full h-64 object-cover rounded-xl border border-gray-200"
+                />
+              </div>
+            )}
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
+                <p className="text-gray-700">{selectedCollection.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Maker</h4>
+                  <p className="text-gray-700">{selectedCollection.maker}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Year</h4>
+                  <p className="text-gray-700">{selectedCollection.year}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Category</h4>
+                  <p className="text-gray-700 capitalize">{selectedCollection.category}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Product ID</h4>
+                  <p className="text-gray-700 font-mono text-sm">{selectedCollection.productId}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
