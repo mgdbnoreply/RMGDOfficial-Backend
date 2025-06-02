@@ -150,7 +150,7 @@ function DashboardContent() {
             )}
 
             {activeTab === 'analytics' && (
-              <AnalyticsTab games={games} />
+              <AnalyticsTab  />
             )}
 
             {activeTab === 'admin' && (
