@@ -49,7 +49,7 @@ export default function RMGDDashboard() {
         )}
 
         {activeTab === 'analytics' && (
-          <AnalyticsTab games={games} />
+          <AnalyticsTab  />
         )}
 
         {activeTab === 'admin' && (
