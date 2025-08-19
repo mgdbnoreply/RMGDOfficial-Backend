@@ -29,17 +29,33 @@ function DashboardContent() {
     setError(null);
     
     try {
-      console.log('🔄 Fetching all games...');
       const data = await GameAPI.getAllGames();
-      console.log('✅ Games loaded:', data.length);
       setGames(data);
     } catch (err: any) {
-      console.error('❌ Error loading games:', err);
       setError(`Failed to load games: ${err.message}`);
       setGames([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Optimized update function - updates single game in local state
+  const handleUpdateGame = (updatedGame: Game) => {
+    setGames(currentGames => 
+      currentGames.map(game => 
+        game.GameID.S === updatedGame.GameID.S ? updatedGame : game
+      )
+    );
+  };
+
+  // Optimized add function - adds game to local state
+  const handleAddGame = (newGame: Game) => {
+    setGames(currentGames => [...currentGames, newGame]);
+  };
+
+  // Optimized delete function - removes game from local state  
+  const handleDeleteGame = (gameId: string) => {
+    setGames(currentGames => currentGames.filter(game => game.GameID.S !== gameId));
   };
 
   // Show loading spinner during auth check
@@ -142,6 +158,9 @@ function DashboardContent() {
                 loading={loading}
                 error={error}
                 onRefresh={fetchAllGames}
+                onUpdateGame={handleUpdateGame}
+                onAddGame={handleAddGame}
+                onDeleteGame={handleDeleteGame}
               />
             )}
 
