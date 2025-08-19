@@ -19,14 +19,23 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
   });
 
   const [photoInput, setPhotoInput] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const handleSubmit = async () => {
-    if (!formData.GameTitle.trim()) return;
+    if (!formData.GameTitle.trim() || !formData.Developer.trim()) {
+      setValidationError('Game Title and Developer are required fields');
+      return;
+    }
+    setValidationError('');
     await onSubmit(formData);
   };
 
   const handleInputChange = (field: keyof NewGame, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear validation error when user starts typing
+    if (validationError) {
+      setValidationError('');
+    }
   };
 
   const addPhoto = () => {
@@ -94,13 +103,16 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
               </div>
               
               <div>
-                <label className="block text-gray-700 text-base font-medium mb-2">Developer</label>
+                <label className="block text-gray-700 text-base font-medium mb-2">
+                  Developer <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.Developer}
                   onChange={(e) => handleInputChange('Developer', e.target.value)}
                   className="academic-input w-full text-base"
                   placeholder="Developer or company name"
+                  required
                 />
               </div>
               
@@ -225,6 +237,11 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-2xl">
+          {validationError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{validationError}</p>
+            </div>
+          )}
           <div className="flex justify-end space-x-4">
             <button
               onClick={onCancel}
@@ -234,7 +251,7 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || !formData.GameTitle.trim()}
+              disabled={loading || !formData.GameTitle.trim() || !formData.Developer.trim()}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               <Save className="w-5 h-5" />
