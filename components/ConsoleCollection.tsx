@@ -70,44 +70,7 @@ const extractString = (value: any): string => {
   return String(value);
 };
 
-const convertToDisplay = (item: any): Collection => {
-  try {
-    // Handle both old format (simple fields) and new format (DynamoDB format)
-    const getId = () => extractString(item.id || item.ProductID || '');
-    const getName = () => extractString(item.name || item["Name of Product"] || 'Unknown Device');
-    const getCategory = () => extractString(item.category || item.Type || 'other');
-    const getDescription = () => extractString(item.description || item.Description || 'No description available');
-    const getMaker = () => extractString(item.maker || item.Maker || 'Unknown Maker');
-    const getYear = () => extractString(item.year || item["Year of Fabrication"] || '');
-    const getImage = () => extractString(item.image || '');
-    const getProductId = () => extractString(item.ProductID || item.id || '');
 
-    return {
-      id: getId(),
-      name: getName(),
-      category: getCategory(),
-      description: getDescription(),
-      maker: getMaker(),
-      year: getYear(),
-      image: getImage(),
-      productId: getProductId(),
-      status: 'active',
-    };
-  } catch (error) {
-    console.error('Error converting item:', error, item);
-    return {
-      id: Math.random().toString(36),
-      name: 'Unknown Device',
-      category: 'other',
-      description: 'Error loading device data',
-      maker: 'Unknown',
-      year: '',
-      image: '',
-      productId: '',
-      status: 'active',
-    };
-  }
-};
 
 // Conversion functions between Collection types
 const collectionToModal = (collection: Collection): ModalCollection => ({
@@ -387,11 +350,28 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
   );
 }
 
-export default function ImprovedConsoleCollection() {
-  const [collections, setCollections] = useState<Collection[]>([]);
+interface ConsoleCollectionProps {
+  collections: Collection[];
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => Promise<void>;
+  onUpdateCollection: (updatedCollection: Collection) => void;
+  onAddCollection: (newCollection: Collection) => void;
+  onDeleteCollection: (collectionId: string) => void;
+  convertToDisplay: (item: any) => Collection;
+}
+
+export default function ImprovedConsoleCollection({ 
+  collections, 
+  loading, 
+  error, 
+  onRefresh, 
+  onUpdateCollection, 
+  onAddCollection, 
+  onDeleteCollection,
+  convertToDisplay 
+}: ConsoleCollectionProps) {
   const [filteredCollections, setFilteredCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
   
   // UI State
@@ -408,28 +388,8 @@ export default function ImprovedConsoleCollection() {
   const [selectedCollection, setSelectedCollection] = useState<ModalCollection | null>(null);
 
   useEffect(() => {
-    fetchCollections();
-  }, []);
-
-  useEffect(() => {
     filterCollections();
   }, [collections, searchTerm, selectedCategory, selectedMaker, selectedDecade]);
-
-  const fetchCollections = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const rawData = await CollectionsAPI.getAllCollections();
-      const convertedData = rawData.map((item: any) => convertToDisplay(item));
-      setCollections(convertedData);
-    } catch (err: any) {
-      setError(`Failed to load collections: ${err.message}`);
-      setCollections([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filterCollections = () => {
     let filtered = collections;
@@ -474,7 +434,8 @@ export default function ImprovedConsoleCollection() {
       
       const success = await CollectionsAPI.deleteCollection(productId);
       if (success) {
-        await fetchCollections();
+        // Use callback to update parent state instead of refetching
+        onDeleteCollection(collectionId);
         setSelectedCollection(null);
       } else {
         throw new Error('Failed to delete collection - API returned false');
@@ -497,13 +458,15 @@ export default function ImprovedConsoleCollection() {
         image: newCollection.images?.[0] || ''
       };
 
-      const success = await CollectionsAPI.createCollection(collectionData);
+      const createdCollection = await CollectionsAPI.createCollection(collectionData);
       
-      if (success) {
-        await fetchCollections();
+      if (createdCollection) {
+        // Convert the created collection to display format and add to parent state
+        const displayCollection = convertToDisplay(createdCollection);
+        onAddCollection(displayCollection);
         setShowAddForm(false);
       } else {
-        throw new Error('Failed to add collection - API returned false');
+        throw new Error('Failed to add collection - API returned null');
       }
     } catch (err: any) {
       setOperationError(`Failed to add collection: ${err.message}`);
@@ -533,7 +496,17 @@ export default function ImprovedConsoleCollection() {
       const success = await CollectionsAPI.updateCollection(productId, collectionData);
       
       if (success) {
-        await fetchCollections();
+        // Create updated collection object and update parent state
+        const updatedDisplayCollection: Collection = {
+          ...originalCollection!,
+          name: collectionData.name,
+          category: collectionData.category,
+          description: collectionData.description,
+          maker: collectionData.maker,
+          year: collectionData.year,
+          image: collectionData.image
+        };
+        onUpdateCollection(updatedDisplayCollection);
         setEditingCollection(null);
       } else {
         throw new Error('Failed to update collection - API returned false');
@@ -687,7 +660,6 @@ export default function ImprovedConsoleCollection() {
           </div>
           <button 
             onClick={() => {
-              setError(null);
               setOperationError(null);
             }}
             className="mt-3 text-red-600 hover:text-red-800 text-sm underline"

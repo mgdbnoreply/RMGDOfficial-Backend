@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Game } from '@/types';
-import { GameAPI } from '@/services/api';
+import { GameAPI, CollectionsAPI } from '@/services/api';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Login from '@/components/Login';
 import Sidebar from '@/components/Sidebar';
@@ -11,16 +11,35 @@ import GamesTab from '@/components/GamesTab';
 import AnalyticsTab from '@/components/AnalyticsTab';
 import AdminTab from '@/components/AdminTab';
 
+// Collection interface for top-level state management
+interface Collection {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  maker: string;
+  year: string;
+  image: string;
+  productId: string;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 function DashboardContent() {
   const [activeTab, setActiveTab] = useState('games');
   const [games, setGames] = useState<Game[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(false);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [collectionsError, setCollectionsError] = useState<string | null>(null);
   const { isAuthenticated, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchAllGames();
+      fetchAllCollections();
     }
   }, [isAuthenticated]);
 
@@ -36,6 +55,68 @@ function DashboardContent() {
       setGames([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to convert raw collection data to display format
+  const convertToDisplay = (item: any): Collection => {
+    const extractString = (value: any): string => {
+      if (typeof value === 'object' && value !== null) {
+        return extractString(value.S || value.N || '');
+      }
+      return String(value);
+    };
+
+    try {
+      const getId = () => extractString(item.id || item.ProductID || '');
+      const getName = () => extractString(item.name || item["Name of Product"] || 'Unknown Device');
+      const getCategory = () => extractString(item.category || item.Type || 'other');
+      const getDescription = () => extractString(item.description || item.Description || 'No description available');
+      const getMaker = () => extractString(item.maker || item.Maker || 'Unknown Maker');
+      const getYear = () => extractString(item.year || item["Year of Fabrication"] || '');
+      const getImage = () => extractString(item.image || '');
+      const getProductId = () => extractString(item.ProductID || item.id || '');
+
+      return {
+        id: getId(),
+        name: getName(),
+        category: getCategory(),
+        description: getDescription(),
+        maker: getMaker(),
+        year: getYear(),
+        image: getImage(),
+        productId: getProductId(),
+        status: 'active',
+      };
+    } catch (error) {
+      console.error('Error converting item:', error, item);
+      return {
+        id: Math.random().toString(36),
+        name: 'Unknown Device',
+        category: 'other',
+        description: 'Error loading device data',
+        maker: 'Unknown',
+        year: '',
+        image: '',
+        productId: '',
+        status: 'active',
+      };
+    }
+  };
+
+  const fetchAllCollections = async () => {
+    setCollectionsLoading(true);
+    setCollectionsError(null);
+    
+    try {
+      const rawData = await CollectionsAPI.getAllCollections();
+      const convertedData = rawData.map((item: any) => convertToDisplay(item));
+      setCollections(convertedData);
+    } catch (err: any) {
+      setCollectionsError(`Failed to load collections: ${err.message}`);
+      setCollections([]);
+    } finally {
+      setCollectionsLoading(false);
     }
   };
 
@@ -56,6 +137,27 @@ function DashboardContent() {
   // Optimized delete function - removes game from local state  
   const handleDeleteGame = (gameId: string) => {
     setGames(currentGames => currentGames.filter(game => game.GameID.S !== gameId));
+  };
+
+  // Optimized collection functions - similar to games
+  const handleUpdateCollection = (updatedCollection: Collection) => {
+    setCollections(currentCollections => 
+      currentCollections.map(collection => 
+        collection.id === updatedCollection.id ? updatedCollection : collection
+      )
+    );
+  };
+
+  const handleAddCollection = (newCollection: Collection) => {
+    setCollections(currentCollections => [...currentCollections, newCollection]);
+  };
+
+  const handleDeleteCollection = (collectionId: string) => {
+    setCollections(currentCollections => 
+      currentCollections.filter(collection => 
+        collection.id !== collectionId && collection.productId !== collectionId
+      )
+    );
   };
 
   // Show loading spinner during auth check
@@ -165,7 +267,16 @@ function DashboardContent() {
             )}
 
             {activeTab === 'console' && (
-              <ConsoleCollection />
+              <ConsoleCollection 
+                collections={collections}
+                loading={collectionsLoading}
+                error={collectionsError}
+                onRefresh={fetchAllCollections}
+                onUpdateCollection={handleUpdateCollection}
+                onAddCollection={handleAddCollection}
+                onDeleteCollection={handleDeleteCollection}
+                convertToDisplay={convertToDisplay}
+              />
             )}
 
             {activeTab === 'analytics' && (

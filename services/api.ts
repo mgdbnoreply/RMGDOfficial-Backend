@@ -92,7 +92,7 @@ export const CollectionsAPI = {
     }
   },
 
-  createCollection: async (collectionData: any): Promise<boolean> => {
+  createCollection: async (collectionData: any): Promise<any | null> => {
     try {
       const res = await fetch(`${API_BASE}/collections`, {
         method: 'POST',
@@ -102,10 +102,10 @@ export const CollectionsAPI = {
       
       if (res.ok) {
         const result = await res.json();
-        return true;
+        return result.collection || result; // Return the created collection object
       } else {
         const errorDetails = await res.text();
-        return false;
+        return null;
       }
     } catch (error) {
       throw error;
