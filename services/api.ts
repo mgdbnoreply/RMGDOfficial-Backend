@@ -99,7 +99,14 @@ export const CollectionsAPI = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(collectionData)
       });
-      return res.ok;
+      
+      if (res.ok) {
+        const result = await res.json();
+        return true;
+      } else {
+        const errorDetails = await res.text();
+        return false;
+      }
     } catch (error) {
       throw error;
     }
@@ -112,7 +119,14 @@ export const CollectionsAPI = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(collectionData)
       });
-      return res.ok;
+      
+      if (res.ok) {
+        const result = await res.json();
+        return true;
+      } else {
+        const errorDetails = await res.text();
+        return false;
+      }
     } catch (error) {
       throw error;
     }
@@ -161,7 +175,6 @@ export const DashboardAPI = {
       if (!res.ok) throw new Error('Failed to fetch dashboard stats');
       return await res.json();
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       throw error;
     }
   }
