@@ -158,7 +158,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return true;
     } catch (error) {
-      console.error('Failed to add user:', error);
       return false;
     }
   };
@@ -185,7 +184,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return true;
     } catch (error) {
-      console.error('Failed to delete user:', error);
       return false;
     }
   };
@@ -209,7 +207,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       return true;
     } catch (error) {
-      console.error('Failed to update user:', error);
       return false;
     }
   };

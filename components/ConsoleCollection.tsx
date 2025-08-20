@@ -28,8 +28,11 @@ import {
   Settings
 } from 'lucide-react';
 import { CollectionsAPI } from '@/services/api';
+import AddCollectionModal from './AddCollectionModal';
+import EditCollectionModal from './EditCollectionModal';
+import CollectionDetailModal from './CollectionDetailModal';
 
-// Collection interface based on your existing types
+// Collection interface for ConsoleCollection display
 interface Collection {
   id: string;
   name: string;
@@ -44,6 +47,21 @@ interface Collection {
   updatedAt?: string;
 }
 
+// Collection interface for modals (matching EditCollectionModal and CollectionDetailModal)
+interface ModalCollection {
+  id: string;
+  name: string;
+  type: string;
+  description: string;
+  manufacturer?: string;
+  year?: string;
+  status: string;
+  images?: string[];
+  specifications?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Helper functions from your existing code
 const extractString = (value: any): string => {
   if (!value) return '';
@@ -52,34 +70,36 @@ const extractString = (value: any): string => {
   return String(value);
 };
 
-const convertToDisplay = (item: any): Collection => {
-  try {
-    return {
-      id: extractString(item.id || item.ProductID || ''),
-      name: extractString(item.name || 'Unknown Device'),
-      category: extractString(item.category || 'other'),
-      description: extractString(item.description || 'No description available'),
-      maker: extractString(item.maker || 'Unknown Maker'),
-      year: extractString(item.year || ''),
-      image: extractString(item.image || ''),
-      productId: extractString(item.ProductID || item.id || ''),
-      status: 'active',
-    };
-  } catch (error) {
-    console.error('Error converting item:', error, item);
-    return {
-      id: Math.random().toString(36),
-      name: 'Unknown Device',
-      category: 'other',
-      description: 'Error loading device data',
-      maker: 'Unknown',
-      year: '',
-      image: '',
-      productId: '',
-      status: 'active',
-    };
-  }
-};
+
+
+// Conversion functions between Collection types
+const collectionToModal = (collection: Collection): ModalCollection => ({
+  id: collection.id,
+  name: collection.name,
+  type: collection.category, // category maps to type
+  description: collection.description,
+  manufacturer: collection.maker, // maker maps to manufacturer
+  year: collection.year,
+  status: collection.status || 'active',
+  images: collection.image ? [collection.image] : [],
+  specifications: {},
+  createdAt: collection.createdAt,
+  updatedAt: collection.updatedAt
+});
+
+const modalToCollection = (modal: ModalCollection): Collection => ({
+  id: modal.id,
+  name: modal.name,
+  category: modal.type, // type maps to category
+  description: modal.description,
+  maker: modal.manufacturer || '', // manufacturer maps to maker
+  year: modal.year || '',
+  image: modal.images?.[0] || '',
+  productId: modal.id, // use id as productId
+  status: modal.status,
+  createdAt: modal.createdAt,
+  updatedAt: modal.updatedAt
+});
 
 // CollectionCard Component
 interface CollectionCardProps {
@@ -330,11 +350,28 @@ function CollectionCard({ collection, viewMode, onEdit, onView, onDelete }: Coll
   );
 }
 
-export default function ImprovedConsoleCollection() {
-  const [collections, setCollections] = useState<Collection[]>([]);
+interface ConsoleCollectionProps {
+  collections: Collection[];
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => Promise<void>;
+  onUpdateCollection: (updatedCollection: Collection) => void;
+  onAddCollection: (newCollection: Collection) => void;
+  onDeleteCollection: (collectionId: string) => void;
+  convertToDisplay: (item: any) => Collection;
+}
+
+export default function ImprovedConsoleCollection({ 
+  collections, 
+  loading, 
+  error, 
+  onRefresh, 
+  onUpdateCollection, 
+  onAddCollection, 
+  onDeleteCollection,
+  convertToDisplay 
+}: ConsoleCollectionProps) {
   const [filteredCollections, setFilteredCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
   
   // UI State
@@ -347,33 +384,12 @@ export default function ImprovedConsoleCollection() {
   
   // Modal State
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingCollection, setEditingCollection] = useState<Collection | null>(null);
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
-
-  useEffect(() => {
-    fetchCollections();
-  }, []);
+  const [editingCollection, setEditingCollection] = useState<ModalCollection | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<ModalCollection | null>(null);
 
   useEffect(() => {
     filterCollections();
   }, [collections, searchTerm, selectedCategory, selectedMaker, selectedDecade]);
-
-  const fetchCollections = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const rawData = await CollectionsAPI.getAllCollections();
-      const convertedData = rawData.map((item: any) => convertToDisplay(item));
-      setCollections(convertedData);
-    } catch (err: any) {
-      console.error('❌ Error loading collections:', err);
-      setError(`Failed to load collections: ${err.message}`);
-      setCollections([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filterCollections = () => {
     let filtered = collections;
@@ -412,15 +428,92 @@ export default function ImprovedConsoleCollection() {
     
     setOperationError(null);
     try {
-      const success = await CollectionsAPI.deleteCollection(collectionId);
+      // Find the collection to get the correct ProductID
+      const collectionToDelete = collections.find(c => c.id === collectionId || c.productId === collectionId);
+      const productId = collectionToDelete?.productId || collectionId;
+      
+      const success = await CollectionsAPI.deleteCollection(productId);
       if (success) {
-        await fetchCollections();
+        // Use callback to update parent state instead of refetching
+        onDeleteCollection(collectionId);
         setSelectedCollection(null);
       } else {
         throw new Error('Failed to delete collection - API returned false');
       }
     } catch (err: any) {
       setOperationError(`Failed to delete collection: ${err.message}`);
+    }
+  };
+
+  const handleAddCollection = async (newCollection: any) => {
+    setOperationError(null);
+    try {      
+      // Convert to the format expected by the Lambda function (matching actual DB schema)
+      const collectionData = {
+        name: newCollection.name,
+        category: newCollection.type,
+        description: newCollection.description,
+        maker: newCollection.manufacturer || '',
+        year: newCollection.year || '',
+        image: newCollection.images?.[0] || ''
+      };
+
+      const createdCollection = await CollectionsAPI.createCollection(collectionData);
+      
+      if (createdCollection) {
+        // Convert the created collection to display format and add to parent state
+        const displayCollection = convertToDisplay(createdCollection);
+        onAddCollection(displayCollection);
+        setShowAddForm(false);
+      } else {
+        throw new Error('Failed to add collection - API returned null');
+      }
+    } catch (err: any) {
+      setOperationError(`Failed to add collection: ${err.message}`);
+    }
+  };
+
+  const handleUpdateCollection = async (updatedCollection: any) => {
+    setOperationError(null);
+    try {
+      
+      // Get the original collection to preserve existing data
+      const originalCollection = collections.find(c => c.id === updatedCollection.id);
+      
+      // Convert to the format expected by the Lambda function (matching actual DB schema)
+      const collectionData = {
+        id: originalCollection?.id || updatedCollection.id, // Preserve original id field
+        name: updatedCollection.name || originalCollection?.name || '',
+        category: updatedCollection.type || originalCollection?.category || 'other',
+        description: updatedCollection.description || originalCollection?.description || '',
+        maker: updatedCollection.manufacturer || originalCollection?.maker || '',
+        year: updatedCollection.year || originalCollection?.year || '',
+        image: updatedCollection.images?.[0] || originalCollection?.image || ''
+      };
+
+      // Use ProductID (productId) for the API call, not the secondary id field
+      const productId = originalCollection?.productId || updatedCollection.id;
+      const success = await CollectionsAPI.updateCollection(productId, collectionData);
+      
+      if (success) {
+        // Create updated collection object and update parent state
+        const updatedDisplayCollection: Collection = {
+          ...originalCollection!,
+          name: collectionData.name,
+          category: collectionData.category,
+          description: collectionData.description,
+          maker: collectionData.maker,
+          year: collectionData.year,
+          image: collectionData.image
+        };
+        onUpdateCollection(updatedDisplayCollection);
+        setEditingCollection(null);
+      } else {
+        throw new Error('Failed to update collection - API returned false');
+      }
+    } catch (err: any) {
+      console.error('❌ Update Collection Error:', err);
+      setOperationError(`Failed to update collection: ${err.message}`);
     }
   };
 
@@ -567,7 +660,6 @@ export default function ImprovedConsoleCollection() {
           </div>
           <button 
             onClick={() => {
-              setError(null);
               setOperationError(null);
             }}
             className="mt-3 text-red-600 hover:text-red-800 text-sm underline"
@@ -949,8 +1041,8 @@ export default function ImprovedConsoleCollection() {
                   key={collection.id}
                   collection={collection}
                   viewMode={viewMode}
-                  onEdit={setEditingCollection}
-                  onView={setSelectedCollection}
+                  onEdit={(collection) => setEditingCollection(collectionToModal(collection))}
+                  onView={(collection) => setSelectedCollection(collectionToModal(collection))}
                   onDelete={handleDeleteCollection}
                 />
               ))}
@@ -976,77 +1068,31 @@ export default function ImprovedConsoleCollection() {
         </div>
       )}
 
-      {/* Simple Add Modal Placeholder */}
+      {/* Modals */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Add New Device</h3>
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="p-2 text-gray-400 hover:text-gray-600"
-              >
-                <Plus className="w-6 h-6 rotate-45" />
-              </button>
-            </div>
-            <p className="text-gray-600 text-center py-8">
-              Add Device Modal - To be implemented with your existing AddCollectionModal component
-            </p>
-          </div>
-        </div>
+        <AddCollectionModal
+          onSubmit={handleAddCollection}
+          onCancel={() => setShowAddForm(false)}
+          loading={loading}
+        />
       )}
 
-      {/* Simple View Modal Placeholder */}
       {selectedCollection && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">{selectedCollection.name}</h3>
-              <button
-                onClick={() => setSelectedCollection(null)}
-                className="p-2 text-gray-400 hover:text-gray-600"
-              >
-                <Plus className="w-6 h-6 rotate-45" />
-              </button>
-            </div>
-            
-            {selectedCollection.image && (
-              <div className="mb-6">
-                <img
-                  src={selectedCollection.image}
-                  alt={selectedCollection.name}
-                  className="w-full h-64 object-cover rounded-xl border border-gray-200"
-                />
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-                <p className="text-gray-700">{selectedCollection.description}</p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Maker</h4>
-                  <p className="text-gray-700">{selectedCollection.maker}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Year</h4>
-                  <p className="text-gray-700">{selectedCollection.year}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Category</h4>
-                  <p className="text-gray-700 capitalize">{selectedCollection.category}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Product ID</h4>
-                  <p className="text-gray-700 font-mono text-sm">{selectedCollection.productId}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CollectionDetailModal 
+          collection={selectedCollection} 
+          onClose={() => setSelectedCollection(null)}
+          onEdit={setEditingCollection}
+          onDelete={handleDeleteCollection}
+        />
+      )}
+
+      {editingCollection && (
+        <EditCollectionModal
+          collection={editingCollection}
+          onSave={handleUpdateCollection}
+          onCancel={() => setEditingCollection(null)}
+          loading={loading}
+        />
       )}
     </div>
   );

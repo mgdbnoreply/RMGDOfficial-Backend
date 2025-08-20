@@ -12,9 +12,12 @@ interface GamesTabProps {
   loading: boolean;
   error: string | null;
   onRefresh: () => Promise<void>;
+  onUpdateGame: (updatedGame: Game) => void; // Add local update function
+  onAddGame: (newGame: Game) => void; // Add local add function
+  onDeleteGame: (gameId: string) => void; // Add local delete function
 }
 
-export default function ImprovedGamesTab({ games, loading, error, onRefresh }: GamesTabProps) {
+export default function ImprovedGamesTab({ games, loading, error, onRefresh, onUpdateGame, onAddGame, onDeleteGame }: GamesTabProps) {
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
@@ -64,22 +67,24 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh }: G
   const handleAddGame = async (newGame: NewGame) => {
     setOperationError(null);
     try {
+      // Send simple JavaScript object format instead of DynamoDB format
       const gameData = {
-        GameTitle: { S: newGame.GameTitle },
-        GameDescription: { S: newGame.GameDescription },
-        Developer: { S: newGame.Developer },
-        YearDeveloped: { S: newGame.YearDeveloped },
-        Genre: { S: newGame.Genre },
-        Photos: { SS: newGame.Photos.filter(p => p.trim()) }
+        GameTitle: newGame.GameTitle,
+        GameDescription: newGame.GameDescription,
+        Developer: newGame.Developer,
+        YearDeveloped: newGame.YearDeveloped,
+        Genre: newGame.Genre,
+        Photos: newGame.Photos.filter(p => p.trim())
       };
 
-      const success = await GameAPI.createGame(gameData);
+      const createdGame = await GameAPI.createGame(gameData);
       
-      if (success) {
-        await onRefresh();
+      if (createdGame) {
+        // Add to local state instead of full refresh
+        onAddGame(createdGame);
         setShowAddForm(false);
       } else {
-        throw new Error('Failed to add game - API returned false');
+        throw new Error('Failed to add game - API returned null');
       }
     } catch (err: any) {
       setOperationError(`Failed to add game: ${err.message}`);
@@ -89,10 +94,59 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh }: G
   const handleUpdateGame = async (game: Game) => {
     setOperationError(null);
     try {
-      const success = await GameAPI.updateGame(game.GameID.S, game);
+      // Convert DynamoDB format to simple JavaScript objects
+      const gameData = {
+        GameTitle: game.GameTitle?.S || '',
+        GameDescription: game.GameDescription?.S || '',
+        Developer: game.Developer?.S || '',
+        YearDeveloped: game.YearDeveloped?.S || '',
+        Genre: game.Genre?.S || '',
+        Photos: game.Photos?.SS || [],
+        Connectivity: (game as any).Connectivity?.S || '',
+        ControlMechanisms: (game as any).ControlMechanisms?.S || '',
+        DeveloperLocation: (game as any).DeveloperLocation?.S || '',
+        DeviceType: (game as any).DeviceType?.S || '',
+        GameWebsite: (game as any).GameWebsite?.S || '',
+        HardwareFeatures: (game as any).HardwareFeatures?.S || '',
+        MobilityType: (game as any).MobilityType?.S || '',
+        MonetizationModel: (game as any).MonetizationModel?.S || '',
+        OpenSource: (game as any).OpenSource?.S || '',
+        Players: (game as any).Players?.S || '',
+        Purpose: (game as any).Purpose?.S || '',
+        SiteSpecific: (game as any).SiteSpecific?.S || '',
+        Videos: (game as any).Videos?.SS || []
+      };
+
+      const success = await GameAPI.updateGame(game.GameID.S, gameData);
       
       if (success) {
-        await onRefresh();
+        // Create updated game object with new data but preserve GameID
+        const updatedGame: Game = {
+          ...game, // Keep existing DynamoDB structure
+          GameTitle: { S: gameData.GameTitle },
+          GameDescription: { S: gameData.GameDescription },
+          Developer: { S: gameData.Developer },
+          YearDeveloped: { S: gameData.YearDeveloped },
+          Genre: { S: gameData.Genre },
+          Photos: { SS: gameData.Photos },
+          // Update other fields if they exist
+          ...(gameData.Connectivity && { Connectivity: { S: gameData.Connectivity } }),
+          ...(gameData.ControlMechanisms && { ControlMechanisms: { S: gameData.ControlMechanisms } }),
+          ...(gameData.DeveloperLocation && { DeveloperLocation: { S: gameData.DeveloperLocation } }),
+          ...(gameData.DeviceType && { DeviceType: { S: gameData.DeviceType } }),
+          ...(gameData.GameWebsite && { GameWebsite: { S: gameData.GameWebsite } }),
+          ...(gameData.HardwareFeatures && { HardwareFeatures: { S: gameData.HardwareFeatures } }),
+          ...(gameData.MobilityType && { MobilityType: { S: gameData.MobilityType } }),
+          ...(gameData.MonetizationModel && { MonetizationModel: { S: gameData.MonetizationModel } }),
+          ...(gameData.OpenSource && { OpenSource: { S: gameData.OpenSource } }),
+          ...(gameData.Players && { Players: { S: gameData.Players } }),
+          ...(gameData.Purpose && { Purpose: { S: gameData.Purpose } }),
+          ...(gameData.SiteSpecific && { SiteSpecific: { S: gameData.SiteSpecific } }),
+          ...(gameData.Videos && { Videos: { SS: gameData.Videos } })
+        };
+        
+        // Update local state instead of full refresh
+        onUpdateGame(updatedGame);
         setEditingGame(null);
       } else {
         throw new Error('Failed to update game - API returned false');
@@ -110,7 +164,8 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh }: G
       const success = await GameAPI.deleteGame(gameId);
       
       if (success) {
-        await onRefresh();
+        // Remove from local state instead of full refresh
+        onDeleteGame(gameId);
         setSelectedGame(null);
       } else {
         throw new Error('Failed to delete game - API returned false');
