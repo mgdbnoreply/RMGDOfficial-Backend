@@ -184,13 +184,33 @@ import { Game } from '@/types';
 
 const API_BASE = 'https://u3iysopa88.execute-api.us-east-1.amazonaws.com';
 
-// Helper function to handle CORS errors
-const handleCorsError = (error: any, operation: string) => {
-  console.error(`CORS error during ${operation}:`, error);
-  if (error.message?.includes('CORS')) {
-    throw new Error(`CORS error: Unable to ${operation}. Please check API configuration.`);
-  }
-  throw error;
+// Helper function to convert frontend Game object to DynamoDB format
+const convertToDynamoDBFormat = (gameData: any) => {
+  const formatted: any = {};
+  
+  // Convert each field to DynamoDB format if needed
+  Object.keys(gameData).forEach(key => {
+    const value = gameData[key];
+    
+    // Check if already in DynamoDB format
+    if (value && typeof value === 'object' && (value.S !== undefined || value.SS !== undefined || value.N !== undefined)) {
+      formatted[key] = value;
+    } 
+    // Convert strings to DynamoDB format
+    else if (typeof value === 'string') {
+      formatted[key] = { S: value };
+    }
+    // Convert string arrays to DynamoDB format
+    else if (Array.isArray(value)) {
+      formatted[key] = { SS: value };
+    }
+    // Handle numbers
+    else if (typeof value === 'number') {
+      formatted[key] = { N: value.toString() };
+    }
+  });
+  
+  return formatted;
 };
 
 // ===== EXISTING GAME API =====
@@ -202,7 +222,8 @@ export const GameAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      return handleCorsError(error, 'fetch games');
+      console.error('Error fetching games:', error);
+      throw error;
     }
   },
 
@@ -212,57 +233,96 @@ export const GameAPI = {
       if (!res.ok) throw new Error('Failed to fetch game');
       return await res.json();
     } catch (error) {
-      return handleCorsError(error, 'fetch game');
+      console.error('Error fetching game:', error);
+      throw error;
     }
   },
 
   createGame: async (gameData: any): Promise<Game | null> => {
     try {
+      // Ensure data is in DynamoDB format
+      const formattedData = gameData.GameTitle?.S 
+        ? gameData 
+        : convertToDynamoDBFormat(gameData);
+      
+      console.log('Creating game with data:', formattedData);
+      
       const res = await fetch(`${API_BASE}/games`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(gameData)
+        body: JSON.stringify(formattedData)
       });
       
       if (res.ok) {
         const result = await res.json();
-        return result.game; // Return the created game object
+        return result.game;
       }
       
-      // Log detailed error for debugging
-      console.error('Failed to create game:', res.status, res.statusText);
+      console.error('Failed to create game:', res.status, await res.text());
       return null;
     } catch (error) {
-      return handleCorsError(error, 'create game');
+      console.error('Error creating game:', error);
+      throw error;
     }
   },
 
   updateGame: async (gameId: string, gameData: any): Promise<boolean> => {
     try {
-      console.log('Updating game:', gameId, gameData); // Debug log
+      console.log('=== UPDATE GAME DEBUG ===');
+      console.log('Game ID:', gameId);
+      console.log('Original gameData:', gameData);
+      
+      // Check if data is already in DynamoDB format
+      let formattedData;
+      if (gameData.GameTitle && typeof gameData.GameTitle === 'object' && gameData.GameTitle.S !== undefined) {
+        console.log('Data is already in DynamoDB format');
+        formattedData = gameData;
+      } else {
+        console.log('Converting to DynamoDB format');
+        formattedData = convertToDynamoDBFormat(gameData);
+      }
+      
+      console.log('Formatted data being sent:', JSON.stringify(formattedData, null, 2));
+      console.log('API URL:', `${API_BASE}/games/${gameId}`);
       
       const res = await fetch(`${API_BASE}/games/${gameId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify(gameData)
+        body: JSON.stringify(formattedData)
       });
       
+      console.log('Response received:');
+      console.log('- Status:', res.status);
+      console.log('- Status Text:', res.statusText);
+      console.log('- Headers:', Object.fromEntries(res.headers.entries()));
+      
       if (!res.ok) {
-        console.error('Update failed:', res.status, res.statusText);
-        const errorText = await res.text().catch(() => 'No error details');
-        console.error('Error details:', errorText);
-        return false;
+        const errorText = await res.text().catch(() => 'Could not read error response');
+        console.error('Update failed. Error response:', errorText);
+        throw new Error(`Failed to update game: ${res.status} ${res.statusText}`);
       }
+      
+      const result = await res.json().catch(() => ({ message: 'Update completed' }));
+      console.log('Update successful. Response:', result);
+      console.log('=== END UPDATE GAME DEBUG ===');
       
       return true;
     } catch (error) {
-      console.error('Update game error:', error);
-      handleCorsError(error, 'update game');
-      return false;
+      console.error('=== UPDATE GAME ERROR ===');
+      console.error('Error details:', error);
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        console.error('This is likely a CORS error. Check:');
+        console.error('1. API Gateway OPTIONS method is configured');
+        console.error('2. API Gateway has been deployed');
+        console.error('3. Lambda returns CORS headers');
+      }
+      console.error('=== END UPDATE GAME ERROR ===');
+      throw error;
     }
   },
 
@@ -273,7 +333,8 @@ export const GameAPI = {
       });
       return res.ok;
     } catch (error) {
-      return handleCorsError(error, 'delete game');
+      console.error('Error deleting game:', error);
+      throw error;
     }
   }
 };
@@ -287,7 +348,8 @@ export const CollectionsAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      return handleCorsError(error, 'fetch collections');
+      console.error('Error fetching collections:', error);
+      throw error;
     }
   },
 
@@ -298,7 +360,8 @@ export const CollectionsAPI = {
       const data = await res.json();
       return data;
     } catch (error) {
-      return handleCorsError(error, 'fetch collection');
+      console.error('Error fetching collection:', error);
+      throw error;
     }
   },
 
@@ -307,7 +370,7 @@ export const CollectionsAPI = {
       const res = await fetch(`${API_BASE}/collections`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(collectionData)
       });
@@ -321,7 +384,8 @@ export const CollectionsAPI = {
         return null;
       }
     } catch (error) {
-      return handleCorsError(error, 'create collection');
+      console.error('Error creating collection:', error);
+      throw error;
     }
   },
 
@@ -330,7 +394,7 @@ export const CollectionsAPI = {
       const res = await fetch(`${API_BASE}/collections/${collectionId}`, {
         method: 'PUT',
         headers: { 
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(collectionData)
       });
@@ -343,8 +407,8 @@ export const CollectionsAPI = {
         return false;
       }
     } catch (error) {
-      handleCorsError(error, 'update collection');
-      return false;
+      console.error('Error updating collection:', error);
+      throw error;
     }
   },
 
@@ -355,11 +419,11 @@ export const CollectionsAPI = {
       });
       return res.ok;
     } catch (error) {
-      return handleCorsError(error, 'delete collection');
+      console.error('Error deleting collection:', error);
+      throw error;
     }
   },
 
-  // Additional helper methods for collections
   getCollectionsByType: async (type: string): Promise<any[]> => {
     try {
       const res = await fetch(`${API_BASE}/collections?type=${type}`);
@@ -367,7 +431,8 @@ export const CollectionsAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      return handleCorsError(error, 'fetch collections by type');
+      console.error('Error fetching collections by type:', error);
+      throw error;
     }
   },
 
@@ -378,7 +443,8 @@ export const CollectionsAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      return handleCorsError(error, 'search collections');
+      console.error('Error searching collections:', error);
+      throw error;
     }
   }
 };
@@ -391,7 +457,8 @@ export const DashboardAPI = {
       if (!res.ok) throw new Error('Failed to fetch dashboard stats');
       return await res.json();
     } catch (error) {
-      return handleCorsError(error, 'fetch dashboard stats');
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
     }
   }
 };
