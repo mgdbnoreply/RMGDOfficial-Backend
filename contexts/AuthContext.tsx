@@ -82,25 +82,38 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Load users and passwords from localStorage
     if (typeof window !== 'undefined') {
-      const storedUsers = localStorage.getItem('rmgd_users');
-      const storedPasswords = localStorage.getItem('rmgd_passwords');
+      let storedUsers: User[] = [];
+      let storedPasswords: Record<string, string> = {};
       const storedCurrentUser = localStorage.getItem('rmgd_admin_user');
 
-      if (storedUsers) {
-        try {
-          setUsers(JSON.parse(storedUsers));
-        } catch (error) {
-          console.error('Failed to load users:', error);
-        }
+      try {
+        storedUsers = JSON.parse(localStorage.getItem('rmgd_users') || '[]');
+      } catch (error) { 
+        console.error('Failed to parse stored users, using defaults.');
+        storedUsers = [];
+      }
+      
+      try {
+        storedPasswords = JSON.parse(localStorage.getItem('rmgd_passwords') || '{}');
+      } catch (error) {
+        console.error('Failed to parse stored passwords, using defaults.');
+        storedPasswords = {};
       }
 
-      if (storedPasswords) {
-        try {
-          setPasswords(JSON.parse(storedPasswords));
-        } catch (error) {
-          console.error('Failed to load passwords:', error);
-        }
-      }
+      // Merge default users to ensure they always exist, preventing stale localStorage issues
+      const userMap = new Map(storedUsers.map(u => [u.email, u]));
+      defaultUsers.forEach(defaultUser => {
+          // Add default user if not present in storage
+          if (!userMap.has(defaultUser.email)) {
+              userMap.set(defaultUser.email, defaultUser);
+          }
+      });
+
+      const finalUsers = Array.from(userMap.values());
+      const finalPasswords = { ...defaultPasswords, ...storedPasswords };
+      
+      setUsers(finalUsers);
+      setPasswords(finalPasswords);
 
       if (storedCurrentUser) {
         try {
@@ -252,3 +265,4 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     </AuthContext.Provider>
   );
 };
+
