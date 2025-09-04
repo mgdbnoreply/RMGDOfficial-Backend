@@ -10,6 +10,8 @@ import UserManagement from '@/components/UserManagement';
 import GamesTab from '@/components/GamesTab';
 import AnalyticsTab from '@/components/AnalyticsTab';
 import AdminTab from '@/components/AdminTab';
+import UserDashboard from '@/components/UserDashboard'; // New component for users
+import AdminApprovalQueue from '@/components/AdminApprovalQueue'; // New component for admins
 
 // Collection interface for top-level state management
 interface Collection {
@@ -34,14 +36,21 @@ function DashboardContent() {
   const [collectionsLoading, setCollectionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [collectionsError, setCollectionsError] = useState<string | null>(null);
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchAllGames();
-      fetchAllCollections();
+        // Set default tab based on role and fetch data accordingly
+        if (user?.role === 'user') {
+            setActiveTab('user_dashboard');
+            // User-specific data would be fetched here
+        } else { // Admin and Researcher
+            setActiveTab('games');
+            fetchAllGames();
+            fetchAllCollections();
+        }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   const fetchAllGames = async () => {
     setLoading(true);
@@ -61,47 +70,23 @@ function DashboardContent() {
   // Helper function to convert raw collection data to display format
   const convertToDisplay = (item: any): Collection => {
     const extractString = (value: any): string => {
-      if (typeof value === 'object' && value !== null) {
-        return extractString(value.S || value.N || '');
+      if (typeof value === 'object' && value !== null && value.S) {
+          return String(value.S);
       }
-      return String(value);
+      return String(value || '');
     };
 
-    try {
-      const getId = () => extractString(item.id || item.ProductID || '');
-      const getName = () => extractString(item.name || item["Name of Product"] || 'Unknown Device');
-      const getCategory = () => extractString(item.category || item.Type || 'other');
-      const getDescription = () => extractString(item.description || item.Description || 'No description available');
-      const getMaker = () => extractString(item.maker || item.Maker || 'Unknown Maker');
-      const getYear = () => extractString(item.year || item["Year of Fabrication"] || '');
-      const getImage = () => extractString(item.image || '');
-      const getProductId = () => extractString(item.ProductID || item.id || '');
-
-      return {
-        id: getId(),
-        name: getName(),
-        category: getCategory(),
-        description: getDescription(),
-        maker: getMaker(),
-        year: getYear(),
-        image: getImage(),
-        productId: getProductId(),
+    return {
+        id: extractString(item.id || item.ProductID),
+        name: extractString(item.name),
+        category: extractString(item.category),
+        description: extractString(item.description),
+        maker: extractString(item.maker),
+        year: extractString(item.year),
+        image: extractString(item.image),
+        productId: extractString(item.ProductID || item.id),
         status: 'active',
-      };
-    } catch (error) {
-      console.error('Error converting item:', error, item);
-      return {
-        id: Math.random().toString(36),
-        name: 'Unknown Device',
-        category: 'other',
-        description: 'Error loading device data',
-        maker: 'Unknown',
-        year: '',
-        image: '',
-        productId: '',
-        status: 'active',
-      };
-    }
+    };
   };
 
   const fetchAllCollections = async () => {
@@ -180,6 +165,13 @@ function DashboardContent() {
 
   // Get tab title and description
   const getTabInfo = () => {
+    if (user?.role === 'user') {
+        return {
+            title: 'Contributor Dashboard',
+            description: 'Submit new games and track your contributions to the RMGD project.'
+        };
+    }
+      
     switch (activeTab) {
       case 'games':
         return {
@@ -189,7 +181,7 @@ function DashboardContent() {
       case 'console':
         return {
           title: 'Console & Device Collection',
-          description: 'Physical gaming device preservation - Coming Soon'
+          description: 'Physical gaming device preservation'
         };
       case 'analytics':
         return {
@@ -205,6 +197,11 @@ function DashboardContent() {
         return {
           title: 'User Management Portal',
           description: 'Manage RMGD portal access and user permissions'
+        };
+      case 'approvals':
+        return {
+          title: 'Submission Approval Queue',
+          description: 'Review and approve new game submissions from contributors.'
         };
       default:
         return {
@@ -254,41 +251,44 @@ function DashboardContent() {
         {/* Content Area */}
         <main className="p-8 bg-gray-50 min-h-screen">
           <div className="max-w-full">
-            {activeTab === 'games' && (
-              <GamesTab
-                games={games}
-                loading={loading}
-                error={error}
-                onRefresh={fetchAllGames}
-                onUpdateGame={handleUpdateGame}
-                onAddGame={handleAddGame}
-                onDeleteGame={handleDeleteGame}
-              />
+            {/* ROLE-BASED RENDERING */}
+            {user?.role === 'user' && <UserDashboard />}
+
+            {(user?.role === 'admin' || user?.role === 'researcher') && (
+              <>
+                {activeTab === 'games' && (
+                  <GamesTab
+                    games={games}
+                    loading={loading}
+                    error={error}
+                    onRefresh={fetchAllGames}
+                    onUpdateGame={handleUpdateGame}
+                    onAddGame={handleAddGame}
+                    onDeleteGame={handleDeleteGame}
+                  />
+                )}
+                {activeTab === 'console' && (
+                   <ConsoleCollection 
+                    collections={collections}
+                    loading={collectionsLoading}
+                    error={collectionsError}
+                    onRefresh={fetchAllCollections}
+                    onUpdateCollection={handleUpdateCollection}
+                    onAddCollection={handleAddCollection}
+                    onDeleteCollection={handleDeleteCollection}
+                    convertToDisplay={convertToDisplay}
+                  />
+                )}
+                {activeTab === 'analytics' && <AnalyticsTab />}
+              </>
             )}
 
-            {activeTab === 'console' && (
-              <ConsoleCollection 
-                collections={collections}
-                loading={collectionsLoading}
-                error={collectionsError}
-                onRefresh={fetchAllCollections}
-                onUpdateCollection={handleUpdateCollection}
-                onAddCollection={handleAddCollection}
-                onDeleteCollection={handleDeleteCollection}
-                convertToDisplay={convertToDisplay}
-              />
-            )}
-
-            {activeTab === 'analytics' && (
-              <AnalyticsTab  />
-            )}
-
-            {activeTab === 'admin' && (
-              <AdminTab />
-            )}
-
-            {activeTab === 'users' && (
-              <UserManagement />
+            {user?.role === 'admin' && (
+                <>
+                    {activeTab === 'admin' && <AdminTab />}
+                    {activeTab === 'users' && <UserManagement />}
+                    {activeTab === 'approvals' && <AdminApprovalQueue />}
+                </>
             )}
           </div>
         </main>
@@ -304,3 +304,4 @@ export default function RMGDDashboard() {
     </AuthProvider>
   );
 }
+

@@ -47,12 +47,30 @@ const defaultUsers: User[] = [
     name: 'RMGD Administrator',
     createdAt: '2024-01-01T00:00:00Z',
     lastLogin: new Date().toISOString()
+  },
+  {
+    id: 'researcher-001',
+    email: 'researcher@rmgd.org',
+    role: 'researcher',
+    name: 'RMGD Researcher',
+    createdAt: '2024-01-01T00:00:00Z',
+    lastLogin: new Date().toISOString()
+  },
+  {
+    id: 'user-001',
+    email: 'user@rmgd.org',
+    role: 'user',
+    name: 'Community Contributor',
+    createdAt: '2024-01-01T00:00:00Z',
+    lastLogin: new Date().toISOString()
   }
 ];
 
 // Default passwords (in production, this would be hashed)
 const defaultPasswords: Record<string, string> = {
-  'admin@rmgd.org': 'admin'
+  'admin@rmgd.org': 'admin',
+  'researcher@rmgd.org': 'researcher',
+  'user@rmgd.org': 'user'
 };
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {

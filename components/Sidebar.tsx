@@ -12,7 +12,8 @@ import {
   Clock,
   Users,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  CheckSquare // New Icon
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -26,33 +27,35 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const [showUserManagement, setShowUserManagement] = useState(false);
   const { user, logout, users } = useAuth();
 
-  const menuItems = [
-    {
-      id: 'games',
-      label: 'Game Collection',
-      icon: Gamepad2,
-      description: 'Manage retro mobile games database'
-    },
-    {
-      id: 'console',
-      label: 'Console Collection',
-      icon: Database,
-      description: 'Physical device preservation',
-      comingSoon: false
-    },
-    {
-      id: 'analytics',
-      label: 'Research Analytics',
-      icon: BarChart3,
-      description: 'Historical analysis & insights'
-    },
-    {
-      id: 'admin',
-      label: 'System Administration',
-      icon: Settings,
-      description: 'System settings & configuration'
-    }
+  // Define menu items for different roles
+  const adminMenuItems = [
+    { id: 'games', label: 'Game Collection', icon: Gamepad2, description: 'Manage retro mobile games database' },
+    { id: 'console', label: 'Console Collection', icon: Database, description: 'Physical device preservation' },
+    { id: 'approvals', label: 'Approval Queue', icon: CheckSquare, description: 'Review user submissions' },
+    { id: 'analytics', label: 'Research Analytics', icon: BarChart3, description: 'Historical analysis & insights' },
+    { id: 'admin', label: 'System Administration', icon: Settings, description: 'System settings & configuration' }
   ];
+
+  const researcherMenuItems = [
+    { id: 'games', label: 'Game Collection', icon: Gamepad2, description: 'Manage retro mobile games database' },
+    { id: 'console', label: 'Console Collection', icon: Database, description: 'Physical device preservation' },
+    { id: 'analytics', label: 'Research Analytics', icon: BarChart3, description: 'Historical analysis & insights' }
+  ];
+
+  const userMenuItems = [
+      { id: 'user_dashboard', label: 'My Dashboard', icon: User, description: 'Submit games and track your contributions' }
+  ];
+  
+  const getMenuItems = () => {
+      switch(user?.role) {
+          case 'admin': return adminMenuItems;
+          case 'researcher': return researcherMenuItems;
+          case 'user': return userMenuItems;
+          default: return [];
+      }
+  }
+
+  const menuItems = getMenuItems();
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to logout?')) {
@@ -85,7 +88,11 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white">RMGD</h2>
-                  <p className="text-red-100 text-sm font-medium">Admin Portal</p>
+                  <p className="text-red-100 text-sm font-medium">
+                    {user?.role === 'admin' && 'Admin Portal'}
+                    {user?.role === 'researcher' && 'Research Portal'}
+                    {user?.role === 'user' && 'Contributor Portal'}
+                  </p>
                 </div>
               </div>
             )}
@@ -116,49 +123,53 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 </div>
               </div>
 
-              {/* User Management Toggle */}
-              <button
-                onClick={() => setShowUserManagement(!showUserManagement)}
-                className="w-full flex items-center justify-between p-3 text-red-100 hover:text-white hover:bg-white/10 rounded-xl transition-all"
-              >
-                <div className="flex items-center space-x-3">
-                  <Users className="w-5 h-5" />
-                  <span className="text-base font-medium">User Management</span>
-                </div>
-                {showUserManagement ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-              </button>
-
-              {/* User List */}
-              {showUserManagement && (
-                <div className="ml-8 space-y-2">
-                  <div className="text-xs text-red-200 font-medium mb-2 uppercase tracking-wide">
-                    Active Users ({users.length})
-                  </div>
-                  {users.map((u) => (
-                    <div key={u.id} className="flex items-center space-x-2 p-2 bg-white/10 rounded-lg">
-                      <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-                        <User className="w-3 h-3 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white truncate">{u.name}</p>
-                        <p className="text-xs text-red-200 truncate">{u.email}</p>
-                      </div>
-                      {u.id === user?.id && (
-                        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                      )}
-                    </div>
-                  ))}
+              {/* User Management Toggle for Admins */}
+              {user?.role === 'admin' && (
+                <>
                   <button
-                    onClick={() => setActiveTab('users')}
-                    className="w-full p-2 text-sm text-red-200 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                    onClick={() => setShowUserManagement(!showUserManagement)}
+                    className="w-full flex items-center justify-between p-3 text-red-100 hover:text-white hover:bg-white/10 rounded-xl transition-all"
                   >
-                    Manage Users →
+                    <div className="flex items-center space-x-3">
+                      <Users className="w-5 h-5" />
+                      <span className="text-base font-medium">User Management</span>
+                    </div>
+                    {showUserManagement ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
                   </button>
-                </div>
+
+                  {/* User List */}
+                  {showUserManagement && (
+                    <div className="ml-8 space-y-2">
+                      <div className="text-xs text-red-200 font-medium mb-2 uppercase tracking-wide">
+                        Active Users ({users.length})
+                      </div>
+                      {users.map((u) => (
+                        <div key={u.id} className="flex items-center space-x-2 p-2 bg-white/10 rounded-lg">
+                          <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                            <User className="w-3 h-3 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white truncate">{u.name}</p>
+                            <p className="text-xs text-red-200 truncate">{u.email}</p>
+                          </div>
+                          {u.id === user?.id && (
+                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        onClick={() => setActiveTab('users')}
+                        className="w-full p-2 text-sm text-red-200 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                      >
+                        Manage Users →
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -169,18 +180,15 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => !item.comingSoon && setActiveTab(item.id)}
-              disabled={item.comingSoon}
+              onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-200 group text-left ${
                 activeTab === item.id
                   ? 'bg-white/20 text-white border border-white/30 shadow-lg'
-                  : item.comingSoon
-                  ? 'text-red-300 cursor-not-allowed opacity-60'
                   : 'text-red-100 hover:text-white hover:bg-white/10'
               }`}
             >
               <div className={`flex-shrink-0 ${
-                activeTab === item.id ? 'text-white' : item.comingSoon ? 'text-red-400' : 'text-red-200 group-hover:text-white'
+                activeTab === item.id ? 'text-white' : 'text-red-200 group-hover:text-white'
               }`}>
                 <item.icon className="w-6 h-6" />
               </div>
@@ -189,11 +197,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-base">{item.label}</span>
-                    {item.comingSoon && (
-                      <span className="px-2 py-1 text-xs bg-amber-500/20 text-amber-200 rounded-full border border-amber-500/30">
-                        Soon
-                      </span>
-                    )}
                   </div>
                   <p className="text-sm text-red-200 mt-1 leading-snug">{item.description}</p>
                 </div>
@@ -211,7 +214,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-base text-white font-medium">Database Online</span>
+                    <span className="text-base text-white font-medium">System Online</span>
                   </div>
                   <Clock className="w-5 h-5 text-green-400" />
                 </div>
@@ -254,3 +257,4 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     </>
   );
 }
+
