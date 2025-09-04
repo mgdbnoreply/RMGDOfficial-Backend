@@ -64,19 +64,9 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
     setFilteredGames(filtered);
   };
 
-  const handleAddGame = async (newGame: NewGame) => {
+  const handleAddGame = async (gameData: NewGame & { [key: string]: any }) => {
     setOperationError(null);
     try {
-      // Send simple JavaScript object format instead of DynamoDB format
-      const gameData = {
-        GameTitle: newGame.GameTitle,
-        GameDescription: newGame.GameDescription,
-        Developer: newGame.Developer,
-        YearDeveloped: newGame.YearDeveloped,
-        Genre: newGame.Genre,
-        Photos: newGame.Photos.filter(p => p.trim())
-      };
-
       const createdGame = await GameAPI.createGame(gameData);
       
       if (createdGame) {
@@ -256,7 +246,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
                 </span>
                 <span className="flex items-center space-x-1">
                   <Star className="w-4 h-4" />
-                  <span>{Math.round((stats.documentedGames / stats.totalGames) * 100)}% Documented</span>
+                  <span>{stats.totalGames > 0 ? Math.round((stats.documentedGames / stats.totalGames) * 100) : 0}% Documented</span>
                 </span>
                 <span className="flex items-center space-x-1">
                   <Clock className="w-4 h-4" />
@@ -331,7 +321,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
               { title: 'Total Games', value: stats.totalGames, icon: Gamepad2, color: 'bg-red-50 border-red-200', iconColor: 'bg-red-600', textColor: 'text-red-800', change: '+12%' },
               { title: 'Unique Developers', value: stats.developers, icon: Users, color: 'bg-blue-50 border-blue-200', iconColor: 'bg-blue-600', textColor: 'text-blue-800', change: '+8%' },
               { title: 'Game Genres', value: stats.genres, icon: BarChart3, color: 'bg-green-50 border-green-200', iconColor: 'bg-green-600', textColor: 'text-green-800', change: '+3%' },
-              { title: 'Documentation Rate', value: `${Math.round((stats.documentedGames / stats.totalGames) * 100)}%`, icon: BookOpen, color: 'bg-purple-50 border-purple-200', iconColor: 'bg-purple-600', textColor: 'text-purple-800', change: '+15%' }
+              { title: 'Documentation Rate', value: `${stats.totalGames > 0 ? Math.round((stats.documentedGames / stats.totalGames) * 100) : 0}%`, icon: BookOpen, color: 'bg-purple-50 border-purple-200', iconColor: 'bg-purple-600', textColor: 'text-purple-800', change: '+15%' }
             ].map((stat, idx) => (
               <div key={idx} className={`academic-card-elevated p-6 ${stat.color}`}>
                 <div className="flex items-center justify-between mb-4">
@@ -369,7 +359,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
                   </div>
                   <h4 className="font-bold text-gray-900 text-lg mb-2">{era}</h4>
                   <p className="text-gray-600 mb-3">
-                    {Math.round((gamesInEra.length / games.length) * 100)}% of collection
+                    {stats.totalGames > 0 ? Math.round((gamesInEra.length / games.length) * 100) : 0}% of collection
                   </p>
                   <div className="bg-gray-200 rounded-full h-2 mb-2">
                     <div 
@@ -378,7 +368,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
                         idx === 1 ? 'bg-red-500' :
                         'bg-blue-500'
                       }`}
-                      style={{ width: `${(gamesInEra.length / games.length) * 100}%` }}
+                      style={{ width: `${stats.totalGames > 0 ? (gamesInEra.length / games.length) * 100 : 0}%` }}
                     />
                   </div>
                   <p className="text-sm text-gray-500">
@@ -413,7 +403,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-green-800 font-medium">Average Release Year</span>
-                    <span className="text-green-900 font-bold">{stats.avgYear}</span>
+                    <span className="text-green-900 font-bold">{stats.avgYear || 'N/A'}</span>
                   </div>
                   <div className="text-sm text-green-700 mt-1">Collection timeline midpoint</div>
                 </div>
@@ -426,12 +416,12 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-gray-700 font-medium">Visual Documentation</span>
-                    <span className="text-gray-900 font-bold">{Math.round((stats.documentedGames / stats.totalGames) * 100)}%</span>
+                    <span className="text-gray-900 font-bold">{stats.totalGames > 0 ? Math.round((stats.documentedGames / stats.totalGames) * 100) : 0}%</span>
                   </div>
                   <div className="bg-gray-200 rounded-full h-3">
                     <div 
                       className="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full"
-                      style={{ width: `${(stats.documentedGames / stats.totalGames) * 100}%` }}
+                      style={{ width: `${stats.totalGames > 0 ? (stats.documentedGames / stats.totalGames) * 100 : 0}%` }}
                     />
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{stats.documentedGames} of {stats.totalGames} games have images</p>

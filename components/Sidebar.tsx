@@ -29,12 +29,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   // Define menu items for different roles
   const adminMenuItems = [
-    { id: 'games', label: 'Game Collection', icon: Gamepad2, description: 'Manage retro mobile games database' },
-    { id: 'console', label: 'Console Collection', icon: Database, description: 'Physical device preservation' },
-    { id: 'approvals', label: 'Approval Queue', icon: CheckSquare, description: 'Review user submissions' },
+    { id: 'admin', label: 'System Administration', icon: Settings, description: 'System settings & configuration' },
     { id: 'analytics', label: 'Research Analytics', icon: BarChart3, description: 'Historical analysis & insights' },
-    { id: 'admin', label: 'System Administration', icon: Settings, description: 'System settings & configuration' }
-  ];
+    { id: 'approvals', label: 'Approval Queue', icon: CheckSquare, description: 'Review user submissions' },
+    { id: 'console', label: 'Console Collection', icon: Database, description: 'Physical device preservation' },
+    { id: 'games', label: 'Game Collection', icon: Gamepad2, description: 'Manage retro mobile games database' },
+  ].sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically by label
 
   const researcherMenuItems = [
     { id: 'games', label: 'Game Collection', icon: Gamepad2, description: 'Manage retro mobile games database' },
@@ -257,4 +257,3 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     </>
   );
 }
-

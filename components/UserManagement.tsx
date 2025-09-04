@@ -16,8 +16,11 @@ export default function UserManagement() {
   const [newUser, setNewUser] = useState<NewUser>({
     email: '',
     name: '',
-    role: 'researcher'
+    role: 'user' // Default to external user
   });
+
+  const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'researcher');
+  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'researcher');
 
   const handleAddUser = () => {
     if (!newUser.email.trim() || !newUser.name.trim()) return;
@@ -29,7 +32,7 @@ export default function UserManagement() {
     });
 
     if (success) {
-      setNewUser({ email: '', name: '', role: 'researcher' });
+      setNewUser({ email: '', name: '', role: 'user' });
       setShowAddForm(false);
     } else {
       alert('Failed to add user. Email may already exist.');
@@ -64,10 +67,95 @@ export default function UserManagement() {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200';
       case 'researcher': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'curator': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'user': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  const UserListSection = ({ title, userList }: { title: string, userList: typeof users }) => (
+    <div className="academic-card-elevated p-8">
+        <h3 className="text-xl font-bold text-primary mb-6">{title} ({userList.length})</h3>
+        <div className="space-y-6">
+            {userList.map((u) => (
+                <div key={u.id} className="academic-card p-6 hover:shadow-md transition-all">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center">
+                                <Users className="w-6 h-6 text-white" />
+                            </div>
+                            <div>
+                                <div className="flex items-center space-x-3 mb-1">
+                                    <h4 className="text-lg font-semibold text-primary">{u.name}</h4>
+                                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(u.role)}`}>
+                                        {u.role}
+                                    </span>
+                                    {u.id === currentUser?.id && (
+                                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
+                                            Current User
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-gray-700 text-base mb-2">{u.email}</p>
+                                <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                    <span>Created: {formatDate(u.createdAt)}</span>
+                                    {u.lastLogin && (
+                                        <span>Last Login: {formatDate(u.lastLogin)}</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={() => setEditingUser(editingUser === u.id ? null : u.id)}
+                                className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                                title="Edit User"
+                            >
+                                <Edit2 className="w-5 h-5" />
+                            </button>
+                            {u.email !== 'admin@rmgd.org' && u.id !== currentUser?.id && (
+                                <button
+                                    onClick={() => handleDeleteUser(u.id)}
+                                    className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                                    title="Delete User"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    {editingUser === u.id && (
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-gray-600 text-sm font-medium mb-2">Name</label>
+                                    <input
+                                        type="text"
+                                        defaultValue={u.name}
+                                        onBlur={(e) => handleUpdateUser(u.id, 'name', e.target.value)}
+                                        className="academic-input w-full text-base"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-gray-600 text-sm font-medium mb-2">Role</label>
+                                    <select
+                                        defaultValue={u.role}
+                                        onChange={(e) => handleUpdateUser(u.id, 'role', e.target.value)}
+                                        className="academic-input w-full text-base"
+                                        disabled={u.email === 'admin@rmgd.org'}
+                                    >
+                                        <option value="admin">Administrator</option>
+                                        <option value="researcher">Researcher</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -113,20 +201,20 @@ export default function UserManagement() {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-blue-700 text-sm font-medium">Administrators</p>
-                <p className="text-blue-900 text-2xl font-bold">{users.filter(u => u.role === 'admin').length}</p>
+                <p className="text-blue-700 text-sm font-medium">Internal Users</p>
+                <p className="text-blue-900 text-2xl font-bold">{internalUsers.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+          <div className="bg-green-50 rounded-xl p-6 border border-green-200">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-purple-700 text-sm font-medium">Researchers</p>
-                <p className="text-purple-900 text-2xl font-bold">{users.filter(u => u.role === 'researcher').length}</p>
+                <p className="text-green-700 text-sm font-medium">External Users</p>
+                <p className="text-green-900 text-2xl font-bold">{externalUsers.length}</p>
               </div>
             </div>
           </div>
@@ -176,9 +264,9 @@ export default function UserManagement() {
                 onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                 className="academic-input w-full text-base"
               >
-                <option value="researcher">Researcher</option>
-                <option value="curator">Curator</option>
-                <option value="admin">Administrator</option>
+                <option value="user">User (External)</option>
+                <option value="researcher">Researcher (Internal)</option>
+                <option value="admin">Administrator (Internal)</option>
               </select>
             </div>
           </div>
@@ -208,96 +296,9 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* Users List */}
-      <div className="academic-card-elevated p-8">
-        <h3 className="text-xl font-bold text-primary mb-6">Current Users</h3>
-        
-        <div className="space-y-6">
-          {users.map((u) => (
-            <div key={u.id} className="academic-card p-6 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center">
-                    <Users className="w-6 h-6 text-white" />
-                  </div>
-                  
-                  <div>
-                    <div className="flex items-center space-x-3 mb-1">
-                      <h4 className="text-lg font-semibold text-primary">{u.name}</h4>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(u.role)}`}>
-                        {u.role}
-                      </span>
-                      {u.id === currentUser?.id && (
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
-                          Current User
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-gray-700 text-base mb-2">{u.email}</p>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Created: {formatDate(u.createdAt)}</span>
-                      {u.lastLogin && (
-                        <span>Last Login: {formatDate(u.lastLogin)}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setEditingUser(editingUser === u.id ? null : u.id)}
-                    className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-                    title="Edit User"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                  </button>
-                  
-                  {u.email !== 'admin@rmgd.org' && u.id !== currentUser?.id && (
-                    <button
-                      onClick={() => handleDeleteUser(u.id)}
-                      className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                      title="Delete User"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              
-              {/* Edit Form */}
-              {editingUser === u.id && (
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-gray-600 text-sm font-medium mb-2">Name</label>
-                      <input
-                        type="text"
-                        defaultValue={u.name}
-                        onBlur={(e) => handleUpdateUser(u.id, 'name', e.target.value)}
-                        className="academic-input w-full text-base"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-gray-600 text-sm font-medium mb-2">Role</label>
-                      <select
-                        defaultValue={u.role}
-                        onChange={(e) => handleUpdateUser(u.id, 'role', e.target.value)}
-                        className="academic-input w-full text-base"
-                        disabled={u.email === 'admin@rmgd.org'}
-                      >
-                        <option value="researcher">Researcher</option>
-                        <option value="curator">Curator</option>
-                        <option value="admin">Administrator</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Users Lists */}
+      <UserListSection title="Internal Users" userList={internalUsers} />
+      <UserListSection title="External Users" userList={externalUsers} />
     </div>
   );
 }
