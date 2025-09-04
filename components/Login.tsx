@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Eye, EyeOff, Gamepad2, AlertCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Gamepad2, AlertCircle, Loader2, Shield, User, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
@@ -29,9 +29,17 @@ export default function Login() {
     }
   };
 
-  const fillDemoCredentials = () => {
-    setEmail('admin@rmgd.org');
-    setPassword('admin');
+  const handleDemoLogin = (role: 'admin' | 'researcher' | 'user') => {
+    if (role === 'admin') {
+      setEmail('admin@rmgd.org');
+      setPassword('admin');
+    } else if (role === 'researcher') {
+      setEmail('researcher@rmgd.org');
+      setPassword('researcher');
+    } else if (role === 'user') {
+      setEmail('user@rmgd.org');
+      setPassword('user');
+    }
   };
 
   return (
@@ -55,7 +63,7 @@ export default function Login() {
               <Gamepad2 className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome to RMGD</h1>
-            <p className="text-gray-600">Sign in to access the admin portal</p>
+            <p className="text-gray-600">Sign in to access the portal</p>
           </div>
 
           {/* Form */}
@@ -153,27 +161,35 @@ export default function Login() {
 
           {/* Demo Credentials */}
           <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Gamepad2 className="w-4 h-4 text-blue-600" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-medium text-blue-900 mb-1">Demo Access</h3>
-                  <p className="text-sm text-blue-700 mb-3">
-                    Use these credentials to explore the RMGD system
-                  </p>
-                  <button
+            <h3 className="text-sm font-medium text-gray-700 text-center mb-4">Quick Logins (Demo)</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Admin Button */}
+                <button
                     type="button"
-                    onClick={fillDemoCredentials}
-                    className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    Fill Demo Credentials
-                  </button>
-                </div>
-              </div>
+                    onClick={() => handleDemoLogin('admin')}
+                    className="flex flex-col items-center justify-center space-y-2 p-4 bg-red-50 text-red-700 rounded-xl border-2 border-red-100 hover:border-red-400 hover:bg-red-100 transition-all"
+                >
+                    <Shield className="w-6 h-6" />
+                    <span className="font-semibold text-sm">Admin</span>
+                </button>
+                {/* Researcher Button */}
+                <button
+                    type="button"
+                    onClick={() => handleDemoLogin('researcher')}
+                    className="flex flex-col items-center justify-center space-y-2 p-4 bg-blue-50 text-blue-700 rounded-xl border-2 border-blue-100 hover:border-blue-400 hover:bg-blue-100 transition-all"
+                >
+                    <BookOpen className="w-6 h-6" />
+                    <span className="font-semibold text-sm">Researcher</span>
+                </button>
+                {/* User Button */}
+                <button
+                    type="button"
+                    onClick={() => handleDemoLogin('user')}
+                    className="flex flex-col items-center justify-center space-y-2 p-4 bg-green-50 text-green-700 rounded-xl border-2 border-green-100 hover:border-green-400 hover:bg-green-100 transition-all"
+                >
+                    <User className="w-6 h-6" />
+                    <span className="font-semibold text-sm">User</span>
+                </button>
             </div>
           </div>
 
@@ -185,21 +201,6 @@ export default function Login() {
             <p className="text-xs text-gray-400 mt-1">
               Historical Gaming Archive (1975-2008)
             </p>
-          </div>
-        </div>
-
-        {/* Additional Info Card */}
-        <div className="mt-6 bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200 p-6 text-center">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">Access Levels</h3>
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <div className="font-medium text-red-800">Administrator</div>
-              <div className="text-red-600 mt-1">Full system access</div>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <div className="font-medium text-blue-800">Researcher</div>
-              <div className="text-blue-600 mt-1">Read & contribute</div>
-            </div>
           </div>
         </div>
       </div>
