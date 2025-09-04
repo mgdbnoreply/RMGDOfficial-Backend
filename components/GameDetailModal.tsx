@@ -1,4 +1,4 @@
-import { X, Edit2, Trash2, Calendar, Tag, Users, Image, Hash } from 'lucide-react';
+import { X, Edit2, Trash2, Calendar, Tag, Users, Image, Hash, Tv, Gamepad, Globe, Cpu, Wifi, Users2, Building, DollarSign, Code, Info, PlayCircle } from 'lucide-react';
 import { Game } from '@/types';
 
 interface GameDetailModalProps {
@@ -8,21 +8,24 @@ interface GameDetailModalProps {
   onDelete: (gameId: string) => void;
 }
 
-export default function GameDetailModal({ game, onClose, onEdit, onDelete }: GameDetailModalProps) {
-  const genreList = [
-    'Action',
-    'Adventure',
-    'Puzzle',
-    'Strategy',
-    'Sports',
-    'Racing',
-    'Simulation',
-    'Arcade',
-  ] as const;
-  type Genre = typeof genreList[number];
+// A helper to render detail items consistently
+const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => {
+    if (!value || value === 'Unknown' || value === 'N/A') return null;
+    return (
+        <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center space-x-3 mb-2">
+                <Icon className="w-5 h-5 text-gray-600" />
+                <span className="font-semibold text-gray-900">{label}</span>
+            </div>
+            <p className="text-gray-700 text-base ml-8">{value}</p>
+        </div>
+    );
+};
 
+export default function GameDetailModal({ game, onClose, onEdit, onDelete }: GameDetailModalProps) {
   const getGenreColor = (genre: string) => {
-    const colors: Record<Genre, string> = {
+    // ... same color logic as before
+    const colors: { [key: string]: string } = {
       Action: 'bg-red-100 text-red-800 border-red-200',
       Adventure: 'bg-blue-100 text-blue-800 border-blue-200',
       Puzzle: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -32,10 +35,7 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
       Simulation: 'bg-indigo-100 text-indigo-800 border-indigo-200',
       Arcade: 'bg-pink-100 text-pink-800 border-pink-200',
     };
-    if ((genreList as readonly string[]).includes(genre)) {
-      return colors[genre as Genre];
-    }
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+    return colors[genre] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getYearColor = (year: string) => {
@@ -47,7 +47,7 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
           <div className="flex items-start justify-between">
@@ -76,8 +76,7 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
-            <div className="lg:col-span-2">
-              <div className="space-y-6">
+            <div className="lg:col-span-2 space-y-6">
                 {/* Description */}
                 <div className="academic-card p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -91,78 +90,53 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
 
                 {/* Developer Information */}
                 <div className="academic-card p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <div className="w-2 h-6 bg-blue-600 rounded mr-3"></div>
-                    Developer Information
-                  </h3>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                      <Users className="w-6 h-6 text-white" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center"><div className="w-2 h-6 bg-blue-600 rounded mr-3"></div>Developer & Technical Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <DetailItem icon={Building} label="Developer" value={game.Developer?.S} />
+                        <DetailItem icon={Users2} label="Players" value={(game as any).Players?.S} />
+                        <DetailItem icon={Globe} label="Developer Location" value={(game as any).DeveloperLocation?.S} />
+                        <DetailItem icon={Gamepad} label="Control Mechanisms" value={(game as any).ControlMechanisms?.S} />
+                        <DetailItem icon={Cpu} label="Hardware Features" value={(game as any).HardwareFeatures?.S} />
+                        <DetailItem icon={Wifi} label="Connectivity" value={(game as any).Connectivity?.S} />
+                        <DetailItem icon={Tv} label="Device Type" value={(game as any).DeviceType?.S} />
+                        <DetailItem icon={DollarSign} label="Monetization" value={(game as any).MonetizationModel?.S} />
+                        <DetailItem icon={Code} label="Open Source" value={(game as any).OpenSource?.S} />
+                        <DetailItem icon={Info} label="Purpose" value={(game as any).Purpose?.S} />
                     </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-lg">{game.Developer?.S || 'Unknown Developer'}</p>
-                      <p className="text-gray-600">Game Developer</p>
-                    </div>
-                  </div>
                 </div>
-
-                {/* Technical Details */}
-                <div className="academic-card p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <div className="w-2 h-6 bg-purple-600 rounded mr-3"></div>
-                    Technical Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Hash className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Game ID</span>
-                      </div>
-                      <p className="text-gray-700 font-mono text-sm">{game.GameID?.S}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Image className="w-4 h-4 text-gray-600" />
-                        <span className="font-medium text-gray-900">Documentation</span>
-                      </div>
-                      <p className="text-gray-700">
-                        {game.Photos?.SS?.length || 0} visual asset{(game.Photos?.SS?.length || 0) !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Screenshots */}
-              {game.Photos?.SS?.length > 0 && (
+              {/* Media */}
+              {(game.Photos?.SS?.length > 0 || (game as any).Videos?.SS?.length > 0) && (
                 <div className="academic-card p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <div className="w-2 h-6 bg-green-600 rounded mr-3"></div>
-                    Screenshots
-                  </h3>
-                  <div className="grid grid-cols-1 gap-3">
-                    {game.Photos.SS.map((url, i) => (
-                      <div key={i} className="relative group">
-                        <img
-                          src={url}
-                          alt={`${game.GameTitle?.S} screenshot ${i + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-200 hover:border-red-300 transition-colors"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDIwMCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMTI4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04MCA2NEw5MCA1NEwxMDAgNjRIMTIwVjg0SDExMEwxMDAgOTRMOTAgODRIODBWNjRaIiBmaWxsPSIjOUNBM0FGIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTEwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOUNBM0FGIiBmb250LXNpemU9IjEyIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pgo8L3N2Zz4=';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
-                          <span className="opacity-0 group-hover:opacity-100 text-white text-sm font-medium">
-                            Screenshot {i + 1}
-                          </span>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center"><div className="w-2 h-6 bg-green-600 rounded mr-3"></div>Media Assets</h3>
+                    {game.Photos?.SS?.length > 0 && (
+                        <div className="mb-4">
+                            <h4 className="font-medium text-gray-800 mb-2">Screenshots</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                {game.Photos.SS.map((url, i) => (
+                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="relative group">
+                                        <img src={url} alt={`Screenshot ${i + 1}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                                    </a>
+                                ))}
+                            </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                    )}
+                     {(game as any).Videos?.SS?.filter((v: string) => v.trim() !== '').length > 0 && (
+                        <div>
+                            <h4 className="font-medium text-gray-800 mb-2">Videos</h4>
+                             <div className="space-y-2">
+                                {(game as any).Videos.SS.filter((v: string) => v.trim() !== '').map((url: string, i: number) => (
+                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100">
+                                        <PlayCircle className="w-5 h-5 text-red-600"/>
+                                        <span className="text-sm text-blue-700 truncate">Video Link {i + 1}</span>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
               )}
 
@@ -171,20 +145,14 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
                 <div className="space-y-3">
                   <button
-                    onClick={() => {
-                      onEdit(game);
-                      onClose();
-                    }}
+                    onClick={() => { onEdit(game); onClose(); }}
                     className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium"
                   >
                     <Edit2 className="w-5 h-5" />
                     <span>Edit Game</span>
                   </button>
                   <button
-                    onClick={() => {
-                      onDelete(game.GameID?.S);
-                      onClose();
-                    }}
+                    onClick={() => { onDelete(game.GameID?.S); onClose(); }}
                     className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -193,25 +161,13 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
                 </div>
               </div>
 
-              {/* Research Notes */}
-              <div className="academic-card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Research Context</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-amber-800 font-medium">Historical Period</p>
-                    <p className="text-amber-700">Part of RMGD collection (1975-2008)</p>
+               {/* Game ID */}
+              <div className="academic-card p-4">
+                  <div className="flex items-center space-x-2">
+                      <Hash className="w-4 h-4 text-gray-600" />
+                      <span className="font-medium text-gray-900">Game ID</span>
                   </div>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-blue-800 font-medium">Academic Value</p>
-                    <p className="text-blue-700">Mobile gaming evolution research</p>
-                  </div>
-                  {game.Photos?.SS?.length > 0 && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-green-800 font-medium">Documentation</p>
-                      <p className="text-green-700">Visual assets preserved</p>
-                    </div>
-                  )}
-                </div>
+                  <p className="text-gray-700 font-mono text-sm mt-1">{game.GameID?.S}</p>
               </div>
             </div>
           </div>
