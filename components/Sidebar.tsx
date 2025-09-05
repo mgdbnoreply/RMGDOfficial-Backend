@@ -35,6 +35,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       description: 'Manage retro mobile games database'
     },
     {
+      id: 'console',
+      label: 'Console Collection',
+      icon: Database,
+      description: 'Physical device preservation'
+    },
+    {
       id: 'analytics',
       label: 'Research Analytics',
       icon: BarChart3,
@@ -77,7 +83,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         return items.sort((a, b) => a.label.localeCompare(b.label));
       case 'researcher':
         return baseMenuItems.filter(item => 
-          item.id === 'games' || item.id === 'analytics'
+          item.id === 'games' || item.id === 'console' || item.id === 'analytics'
         );
       case 'user':
         return baseMenuItems.filter(item => item.id === 'user-dashboard');
@@ -142,8 +148,8 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium text-white truncate">{user?.Name || user?.Email}</p>
-                    <p className="text-sm text-red-100 capitalize">{user?.Role} Access</p>
+                    <p className="text-base font-medium text-white truncate">{user?.name || user?.email}</p>
+                    <p className="text-sm text-red-100 capitalize">{user?.role} Access</p>
                   </div>
                 </div>
               </div>
@@ -206,3 +212,4 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     </>
   );
 }
+

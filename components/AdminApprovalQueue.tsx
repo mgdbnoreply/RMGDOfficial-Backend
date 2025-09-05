@@ -32,7 +32,7 @@ export default function AdminApprovalQueue() {
     const handleApprove = async (submissionId: string) => {
         if (!user) return;
         setActionLoading(prev => ({ ...prev, [submissionId]: true }));
-        console.log(`Approving ${submissionId} by ${user.UserID}`);
+        console.log(`Approving ${submissionId} by ${user.id}`);
         // Mocking the API call
         setTimeout(() => {
             setPending(prev => prev.filter(s => s.submissionId !== submissionId));
@@ -81,3 +81,4 @@ export default function AdminApprovalQueue() {
         </div>
     );
 }
+

@@ -4,9 +4,9 @@ import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock } from 'lu
 import { useAuth } from '@/contexts/AuthContext';
 
 interface NewUser {
-  Email: string;
-  Name: string;
-  Role: string;
+  email: string;
+  name: string;
+  role: string;
 }
 
 export default function UserManagement() {
@@ -14,25 +14,25 @@ export default function UserManagement() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [newUser, setNewUser] = useState<NewUser>({
-    Email: '',
-    Name: '',
-    Role: 'user' // Default to external user
+    email: '',
+    name: '',
+    role: 'user' // Default to external user
   });
 
-  const internalUsers = users.filter(u => u.Role === 'admin' || u.Role === 'researcher');
-  const externalUsers = users.filter(u => u.Role !== 'admin' && u.Role !== 'researcher');
+  const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'researcher');
+  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'researcher');
 
   const handleAddUser = () => {
-    if (!newUser.Email.trim() || !newUser.Name.trim()) return;
+    if (!newUser.email.trim() || !newUser.name.trim()) return;
     
     const success = addUser({
-      Email: newUser.Email,
-      Name: newUser.Name,
-      Role: newUser.Role
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.role
     });
 
     if (success) {
-      setNewUser({ Email: '', Name: '', Role: 'user' });
+      setNewUser({ email: '', name: '', role: 'user' });
       setShowAddForm(false);
     } else {
       alert('Failed to add user. Email may already exist.');
@@ -77,7 +77,7 @@ export default function UserManagement() {
         <h3 className="text-xl font-bold text-primary mb-6">{title} ({userList.length})</h3>
         <div className="space-y-6">
             {userList.map((u) => (
-                <div key={u.UserID} className="academic-card p-6 hover:shadow-md transition-all">
+                <div key={u.id} className="academic-card p-6 hover:shadow-md transition-all">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center">
@@ -85,36 +85,36 @@ export default function UserManagement() {
                             </div>
                             <div>
                                 <div className="flex items-center space-x-3 mb-1">
-                                    <h4 className="text-lg font-semibold text-primary">{u.Name}</h4>
-                                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(u.Role)}`}>
-                                        {u.Role}
+                                    <h4 className="text-lg font-semibold text-primary">{u.name}</h4>
+                                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(u.role)}`}>
+                                        {u.role}
                                     </span>
-                                    {u.UserID === currentUser?.UserID && (
+                                    {u.id === currentUser?.id && (
                                         <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
                                             Current User
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-gray-700 text-base mb-2">{u.Email}</p>
+                                <p className="text-gray-700 text-base mb-2">{u.email}</p>
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                    <span>Created: {formatDate(u.CreatedAt)}</span>
-                                    {u.LastLogin && (
-                                        <span>Last Login: {formatDate(u.LastLogin)}</span>
+                                    <span>Created: {formatDate(u.createdAt)}</span>
+                                    {u.lastLogin && (
+                                        <span>Last Login: {formatDate(u.lastLogin)}</span>
                                     )}
                                 </div>
                             </div>
                         </div>
                         <div className="flex space-x-2">
                             <button
-                                onClick={() => setEditingUser(editingUser === u.UserID ? null : u.UserID)}
+                                onClick={() => setEditingUser(editingUser === u.id ? null : u.id)}
                                 className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
                                 title="Edit User"
                             >
                                 <Edit2 className="w-5 h-5" />
                             </button>
-                            {u.Email !== 'admin@rmgd.org' && u.UserID !== currentUser?.UserID && (
+                            {u.email !== 'admin@rmgd.org' && u.id !== currentUser?.id && (
                                 <button
-                                    onClick={() => handleDeleteUser(u.UserID)}
+                                    onClick={() => handleDeleteUser(u.id)}
                                     className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
                                     title="Delete User"
                                 >
@@ -123,25 +123,25 @@ export default function UserManagement() {
                             )}
                         </div>
                     </div>
-                    {editingUser === u.UserID && (
+                    {editingUser === u.id && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-gray-600 text-sm font-medium mb-2">Name</label>
                                     <input
                                         type="text"
-                                        defaultValue={u.Name}
-                                        onBlur={(e) => handleUpdateUser(u.UserID, 'Name', e.target.value)}
+                                        defaultValue={u.name}
+                                        onBlur={(e) => handleUpdateUser(u.id, 'name', e.target.value)}
                                         className="academic-input w-full text-base"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-gray-600 text-sm font-medium mb-2">Role</label>
                                     <select
-                                        defaultValue={u.Role}
-                                        onChange={(e) => handleUpdateUser(u.UserID, 'Role', e.target.value)}
+                                        defaultValue={u.role}
+                                        onChange={(e) => handleUpdateUser(u.id, 'role', e.target.value)}
                                         className="academic-input w-full text-base"
-                                        disabled={u.Email === 'admin@rmgd.org'}
+                                        disabled={u.email === 'admin@rmgd.org'}
                                     >
                                         <option value="admin">Administrator</option>
                                         <option value="researcher">Researcher</option>
@@ -239,8 +239,8 @@ export default function UserManagement() {
               <label className="block text-gray-700 text-base font-medium mb-3">Full Name</label>
               <input
                 type="text"
-                value={newUser.Name}
-                onChange={(e) => setNewUser({...newUser, Name: e.target.value})}
+                value={newUser.name}
+                onChange={(e) => setNewUser({...newUser, name: e.target.value})}
                 className="academic-input w-full text-base"
                 placeholder="Enter full name"
               />
@@ -250,8 +250,8 @@ export default function UserManagement() {
               <label className="block text-gray-700 text-base font-medium mb-3">Email Address</label>
               <input
                 type="email"
-                value={newUser.Email}
-                onChange={(e) => setNewUser({...newUser, Email: e.target.value})}
+                value={newUser.email}
+                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                 className="academic-input w-full text-base"
                 placeholder="user@rmgd.org"
               />
@@ -260,8 +260,8 @@ export default function UserManagement() {
             <div>
               <label className="block text-gray-700 text-base font-medium mb-3">Role</label>
               <select
-                value={newUser.Role}
-                onChange={(e) => setNewUser({...newUser, Role: e.target.value})}
+                value={newUser.role}
+                onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                 className="academic-input w-full text-base"
               >
                 <option value="user">User (External)</option>
@@ -280,7 +280,7 @@ export default function UserManagement() {
             </button>
             <button
               onClick={handleAddUser}
-              disabled={!newUser.Name.trim() || !newUser.Email.trim()}
+              disabled={!newUser.name.trim() || !newUser.email.trim()}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               <Save className="w-5 h-5" />
