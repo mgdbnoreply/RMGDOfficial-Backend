@@ -109,17 +109,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   // --- Placeholder User management functions ---
+  // In RMGDOfficial-Backend/contexts/AuthContext.tsx, find and replace these functions
+
   const addUser = async (userData: Omit<User, 'id' | 'createdAt'>): Promise<boolean> => {
-    console.warn("Add User functionality requires a backend POST endpoint.");
+    const newUser = await UserAPI.createUser(userData);
+    if (newUser) {
+      setUsers(prev => [...prev, newUser]);
+      return true;
+    }
     return false;
   };
+
   const deleteUser = async (userId: string): Promise<boolean> => {
-    console.warn("Delete User functionality requires a backend DELETE endpoint.");
-    return false;
+    const success = await UserAPI.deleteUser(userId);
+    if (success) {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+    }
+    return success;
   };
+
   const updateUser = async (userId: string, userData: Partial<User>): Promise<boolean> => {
-    console.warn("Update User functionality requires a backend PUT endpoint.");
-    return false;
+    const success = await UserAPI.updateUser(userId, userData);
+    if (success) {
+      // Refetch all users to ensure the state is consistent
+      const updatedUsers = await UserAPI.getAllUsers();
+      setUsers(updatedUsers);
+    }
+    return success;
   };
   const getAllUsers = (): User[] => users;
 

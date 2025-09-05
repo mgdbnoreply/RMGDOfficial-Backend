@@ -294,24 +294,62 @@ export const CollectionsAPI = {
 };
 
 // ===== USER API (UPDATED) =====
+// In RMGDOfficial-Backend/services/api.ts, replace the entire UserAPI object
+
+// ===== USER API (UPDATED) =====
 export const UserAPI = {
   getAllUsers: async (): Promise<any[]> => {
     try {
       const res = await fetch(`${API_BASE}/user`);
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
-      const items = Array.isArray(data) ? data : [data];
-      // Use the helper to clean the data from DynamoDB format to simple JS objects
-      return items.map(unmarshall);
+      // The Lambda now returns unmarshalled data directly
+      return Array.isArray(data) ? data : [data];
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
     }
   },
-  // Placeholders for when you add POST, PUT, DELETE to your backend Lambda
-  createUser: async (userData: any) => null,
-  updateUser: async (userId: string, userData: any) => false,
-  deleteUser: async (userId: string) => false,
+
+  createUser: async (userData: { name: string; email: string; role: string }): Promise<any | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+      return res.ok ? await res.json() : null;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+
+  updateUser: async (userId: string, userData: { name?: string; role?: string; password?: string }): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/user/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+      return res.ok;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  },
+
+  deleteUser: async (userId: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/user/${userId}`, {
+        method: 'DELETE'
+      });
+      return res.ok;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
 };
 
 // ===== DASHBOARD API (UNCHANGED) =====

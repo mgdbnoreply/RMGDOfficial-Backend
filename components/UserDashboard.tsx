@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 // import { SubmissionsAPI } from '@/services/api'; // Commented out for now
 import { Plus, Clock, Check, X, Edit2, Send, Loader2 } from 'lucide-react';
+import ProfileSettings from './ProfileSettings'; // Add this import at the top
 
 interface GameSubmission {
     submissionId: string;
@@ -64,8 +65,11 @@ export default function UserDashboard() {
         }
     };
 
+    
     return (
         <div className="space-y-8">
+             <ProfileSettings /> {/* Add this new component */}
+             
             <div className="academic-card-elevated p-8">
                 <div className="flex items-center justify-between">
                     <div>
