@@ -1,5 +1,3 @@
-// RMGDOfficial-Backend/components/ProfileSettings.tsx
-
 "use client";
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,7 +25,8 @@ export default function ProfileSettings() {
         setIsLoading(true);
         setMessage('');
         
-        const success = await updateUser(user.id, { password });
+        // Use the backend-expected key 'Password'
+        const success = await updateUser(user.id, { Password: password });
         
         if (success) {
             setMessage('Password updated successfully!');
@@ -49,7 +48,7 @@ export default function ProfileSettings() {
                         type="email"
                         disabled
                         value={user?.email || ''}
-                        className="academic-input w-full bg-gray-100 cursor-not-allowed"
+                        className="academic-input w-full bg-gray-100 cursor-not-allowed mt-1"
                     />
                 </div>
                 <div>
@@ -59,7 +58,7 @@ export default function ProfileSettings() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter new password (min. 8 characters)"
-                        className="academic-input w-full"
+                        className="academic-input w-full mt-1"
                     />
                 </div>
                 <div>
@@ -69,7 +68,7 @@ export default function ProfileSettings() {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         placeholder="Confirm new password"
-                        className="academic-input w-full"
+                        className="academic-input w-full mt-1"
                     />
                 </div>
                 <div className="flex items-center justify-between pt-2">

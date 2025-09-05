@@ -3,44 +3,40 @@ import { useState } from 'react';
 import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-interface NewUser {
-  email: string;
-  name: string;
-  role: string;
-}
+// Note: The 'User' type is now defined in AuthContext.tsx
+// We can remove the local interface if it exists.
 
 export default function UserManagement() {
   const { users, user: currentUser, addUser, deleteUser, updateUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [newUser, setNewUser] = useState<NewUser>({
-    email: '',
-    name: '',
-    role: 'user' // Default to external user
+  const [newUser, setNewUser] = useState({
+    Email: '',
+    Name: '',
+    Role: 'user'
   });
 
   const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'researcher');
   const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'researcher');
 
-  // CORRECTED: Made this function async and added await
   const handleAddUser = async () => {
-    if (!newUser.email.trim() || !newUser.name.trim()) return;
+    if (!newUser.Email.trim() || !newUser.Name.trim()) return;
     
+    // Pass capitalized keys to match the backend Lambda
     const success = await addUser({
-      email: newUser.email,
-      name: newUser.name,
-      role: newUser.role
+      Email: newUser.Email,
+      Name: newUser.Name,
+      Role: newUser.Role
     });
 
     if (success) {
-      setNewUser({ email: '', name: '', role: 'user' });
+      setNewUser({ Email: '', Name: '', Role: 'user' });
       setShowAddForm(false);
     } else {
       alert('Failed to add user. Email may already exist.');
     }
   };
 
-  // CORRECTED: Made this function async and added await
   const handleDeleteUser = async (userId: string) => {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       const success = await deleteUser(userId);
@@ -50,25 +46,24 @@ export default function UserManagement() {
     }
   };
 
-  // CORRECTED: Made this function async and added await
   const handleUpdateUser = async (userId: string, field: string, value: string) => {
-    await updateUser(userId, { [field]: value });
+    // Capitalize the first letter of the field to match backend keys (Name, Role)
+    const backendField = field.charAt(0).toUpperCase() + field.slice(1);
+    await updateUser(userId, { [backendField]: value });
     setEditingUser(null);
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric', month: 'short', day: 'numeric',
     });
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200';
+      case 'Admin': return 'bg-red-100 text-red-800 border-red-200';
       case 'researcher': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'user': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
