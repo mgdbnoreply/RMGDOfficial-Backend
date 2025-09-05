@@ -335,27 +335,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // NOTE: This login logic remains basic. In a real-world scenario,
-    // you would have a dedicated API endpoint for authentication
-    // that returns a token (e.g., JWT).
-    const foundUser = users.find(u => u.email === email);
-    
-    // This is a placeholder for password checking.
-    // The API should handle the actual password verification.
-    if (foundUser) {
-      const updatedUser = { ...foundUser, lastLogin: new Date().toISOString() };
-      setUser(updatedUser);
-      setUsers(prev => prev.map(u => u.id === foundUser.id ? updatedUser : u));
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('rmgd_admin_user', JSON.stringify(updatedUser));
-      }
-      return true;
-    }
-    
-    return false;
-  };
+  // Replace the old login function in RMGDOfficial-Backend/contexts/AuthContext.tsx with this
 
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const loggedInUser = await UserAPI.login(email, password);
+      
+      if (loggedInUser) {
+        // The API successfully authenticated the user
+        const updatedUser = { ...loggedInUser, lastLogin: new Date().toISOString() };
+        setUser(updatedUser);
+        
+        // Update the user's "lastLogin" time in the main users list
+        setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('rmgd_admin_user', JSON.stringify(updatedUser));
+        }
+        return true;
+      }
+      
+      // The API returned null, meaning login failed (invalid credentials)
+      return false;
+    } catch (error) {
+      console.error("Login process failed:", error);
+      return false;
+    }
+  };
   const logout = () => {
     setUser(null);
     if (typeof window !== 'undefined') {
