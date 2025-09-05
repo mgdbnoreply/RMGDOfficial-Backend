@@ -12,6 +12,7 @@ import AnalyticsTab from '@/components/AnalyticsTab';
 import AdminTab from '@/components/AdminTab';
 import UserDashboard from '@/components/UserDashboard'; // New component for users
 import AdminApprovalQueue from '@/components/AdminApprovalQueue'; // New component for admins
+import ProfileSettings from '@/components/ProfileSettings';
 
 // Collection interface for top-level state management
 interface Collection {
@@ -203,6 +204,11 @@ function DashboardContent() {
           title: 'Submission Approval Queue',
           description: 'Review and approve new game submissions from contributors.'
         };
+      case 'profile':
+        return {
+          title: 'My Profile',
+          description: 'Update your profile and change your password.'
+        };
       default:
         return {
           title: 'RMGD Dashboard',
@@ -252,7 +258,9 @@ function DashboardContent() {
         <main className="p-8 bg-gray-50 min-h-screen">
           <div className="max-w-full">
             {/* ROLE-BASED RENDERING */}
-            {user?.role === 'user' && <UserDashboard />}
+            {activeTab === 'profile' && <ProfileSettings />}
+
+            {user?.role === 'user' && activeTab !== 'profile' && <UserDashboard />}
 
             {(user?.role === 'admin' || user?.role === 'researcher') && (
               <>
@@ -304,4 +312,3 @@ export default function RMGDDashboard() {
     </AuthProvider>
   );
 }
-

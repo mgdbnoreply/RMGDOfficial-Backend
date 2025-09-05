@@ -69,6 +69,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       label: 'My Dashboard',
       icon: User,
       description: 'View your submissions'
+    },
+    {
+      id: 'profile',
+      label: 'My Profile',
+      icon: User,
+      description: 'Update your profile settings'
     }
   ];
 
@@ -83,10 +89,10 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         return items.sort((a, b) => a.label.localeCompare(b.label));
       case 'researcher':
         return baseMenuItems.filter(item => 
-          item.id === 'games' || item.id === 'console' || item.id === 'analytics'
+          item.id === 'games' || item.id === 'console' || item.id === 'analytics' || item.id === 'profile'
         );
       case 'user':
-        return baseMenuItems.filter(item => item.id === 'user-dashboard');
+        return baseMenuItems.filter(item => item.id === 'user-dashboard' || item.id === 'profile');
       default:
         return [];
     }
@@ -212,4 +218,3 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     </>
   );
 }
-

@@ -12,6 +12,8 @@ export default function UserManagement() {
     Name: '',
     Role: 'user'
   });
+  const [editData, setEditData] = useState({ name: '', role: '' });
+
 
   const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'Admin' || u.role === 'researcher');
   const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'Admin' && u.role !== 'researcher');
@@ -35,18 +37,32 @@ export default function UserManagement() {
 
   const handleDeleteUser = async (userId: string) => {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+      if (userId === currentUser?.id) {
+        alert("You cannot delete your own account.");
+        return;
+      }
       const success = await deleteUser(userId);
       if (!success) {
-        alert('Cannot delete this user.');
+        alert('Failed to delete this user.');
       }
     }
   };
 
-  const handleUpdateUser = async (userId: string, field: string, value: string) => {
-    const backendField = field.charAt(0).toUpperCase() + field.slice(1);
-    await updateUser(userId, { [backendField]: value });
+  const handleUpdateUser = async (userId: string) => {
+    const { name, role } = editData;
+    const payload: { Name?: string; Role?: string } = {};
+    if (name) payload.Name = name;
+    if (role) payload.Role = role;
+
+    await updateUser(userId, payload);
     setEditingUser(null);
   };
+
+  const startEditing = (user: typeof users[0]) => {
+    setEditingUser(user.id);
+    setEditData({ name: user.name, role: user.role });
+  };
+
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -99,13 +115,13 @@ export default function UserManagement() {
                         </div>
                         <div className="flex space-x-2">
                             <button
-                                onClick={() => setEditingUser(editingUser === u.id ? null : u.id)}
+                                onClick={() => startEditing(u)}
                                 className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
                                 title="Edit User"
                             >
                                 <Edit2 className="w-5 h-5" />
                             </button>
-                            {u.email !== 'admin@rmgd.org' && u.id !== currentUser?.id && (
+                            {u.id !== currentUser?.id && (
                                 <button
                                     onClick={() => handleDeleteUser(u.id)}
                                     className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
@@ -118,21 +134,21 @@ export default function UserManagement() {
                     </div>
                     {editingUser === u.id && (
                         <div className="mt-6 pt-6 border-t border-gray-200">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                                 <div>
                                     <label className="block text-gray-600 text-sm font-medium mb-2">Name</label>
                                     <input
                                         type="text"
-                                        defaultValue={u.name}
-                                        onBlur={(e) => handleUpdateUser(u.id, 'name', e.target.value)}
+                                        value={editData.name}
+                                        onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                                         className="academic-input w-full text-base"
                                     />
                                 </div>
                                 <div>
                                     <label className="block text-gray-600 text-sm font-medium mb-2">Role</label>
                                     <select
-                                        defaultValue={u.role}
-                                        onChange={(e) => handleUpdateUser(u.id, 'role', e.target.value)}
+                                        value={editData.role}
+                                        onChange={(e) => setEditData({ ...editData, role: e.target.value })}
                                         className="academic-input w-full text-base"
                                         disabled={u.email === 'admin@rmgd.org'}
                                     >
@@ -141,6 +157,10 @@ export default function UserManagement() {
                                         <option value="user">User</option>
                                     </select>
                                 </div>
+                            </div>
+                            <div className="flex justify-end mt-4 space-x-2">
+                                <button onClick={() => setEditingUser(null)} className="p-2 text-gray-600 hover:bg-gray-100 rounded-md"><X className="w-5 h-5" /></button>
+                                <button onClick={() => handleUpdateUser(u.id)} className="p-2 text-green-600 hover:bg-green-100 rounded-md"><Save className="w-5 h-5" /></button>
                             </div>
                         </div>
                     )}
@@ -289,4 +309,3 @@ export default function UserManagement() {
     </div>
   );
 }
-
