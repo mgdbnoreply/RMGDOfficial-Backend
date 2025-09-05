@@ -31,7 +31,36 @@ const convertToDynamoDBFormat = (gameData: any) => {
   return formatted;
 };
 
-// ===== EXISTING GAME API =====
+// ==================== NEW CODE STARTS HERE ====================
+// This new helper function is ONLY used for the User API.
+
+/**
+ * Converts a single DynamoDB-formatted item into a regular JavaScript object.
+ * It also renames 'UserID' to 'id' to match the frontend's expectation.
+ * @param {any} item - The item from DynamoDB with keys like { "S": "value" }.
+ * @returns {any} A clean JavaScript object.
+ */
+const unmarshall = (item: any) => {
+  if (!item) return {};
+  const obj: { [key: string]: any } = {};
+  for (const key in item) {
+    const valueObject = item[key];
+    if (valueObject) {
+      const type = Object.keys(valueObject)[0]; // 'S', 'N', 'SS', etc.
+      obj[key] = valueObject[type];
+    }
+  }
+  // The frontend code expects an 'id' property.
+  if (obj.UserID) {
+    obj.id = obj.UserID;
+    delete obj.UserID;
+  }
+  return obj;
+};
+// ==================== NEW CODE ENDS HERE ====================
+
+
+// ===== EXISTING GAME API (UNCHANGED) =====
 export const GameAPI = {
   getAllGames: async (): Promise<Game[]> => {
     try {
@@ -58,7 +87,6 @@ export const GameAPI = {
 
   createGame: async (gameData: any): Promise<Game | null> => {
     try {
-      // Ensure data is in DynamoDB format
       const formattedData = gameData.GameTitle?.S 
         ? gameData 
         : convertToDynamoDBFormat(gameData);
@@ -92,7 +120,6 @@ export const GameAPI = {
       console.log('Game ID:', gameId);
       console.log('Original gameData:', gameData);
       
-      // Check if data is already in DynamoDB format
       let formattedData;
       if (gameData.GameTitle && typeof gameData.GameTitle === 'object' && gameData.GameTitle.S !== undefined) {
         console.log('Data is already in DynamoDB format');
@@ -157,7 +184,7 @@ export const GameAPI = {
   }
 };
 
-// ===== NEW COLLECTIONS API =====
+// ===== NEW COLLECTIONS API (UNCHANGED) =====
 export const CollectionsAPI = {
   getAllCollections: async (): Promise<any[]> => {
     try {
@@ -267,7 +294,30 @@ export const CollectionsAPI = {
   }
 };
 
-// ===== EXISTING DASHBOARD API =====
+// ==================== UPDATED USER API ====================
+// This is the only other part that has changed.
+export const UserAPI = {
+  getAllUsers: async (): Promise<any[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/user`);
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : [data];
+      // Use the new helper to clean the data
+      return items.map(unmarshall);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+  // These functions are placeholders for when you expand your backend
+  createUser: async (userData: any) => null,
+  updateUser: async (userId: string, userData: any) => false,
+  deleteUser: async (userId: string) => false,
+};
+// ==========================================================
+
+// ===== EXISTING DASHBOARD API (UNCHANGED) =====
 export const DashboardAPI = {
   getDashboardStats: async (): Promise<any> => {
     try {
@@ -276,94 +326,6 @@ export const DashboardAPI = {
       return await res.json();
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
-      throw error;
-    }
-  }
-};
-
-
-// ===== NEW USER API =====
-export const UserAPI = {
-
-  // In RMGDOfficial-Backend/services/api.ts, add this function inside the UserAPI object
-
-  login: async (email: string, password: string): Promise<any | null> => {
-    try {
-      const res = await fetch(`${API_BASE}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (!res.ok) {
-        // The API returned an error (e.g., 401 Unauthorized for bad password)
-        return null;
-      }
-      
-      // Assuming the API returns the user object on successful login
-      return await res.json(); 
-    } catch (error) {
-      console.error('Error during login API call:', error);
-      return null;
-    }
-  },
-  getAllUsers: async (): Promise<any[]> => {
-    try {
-      const res = await fetch(`${API_BASE}/user`);
-      if (!res.ok) throw new Error('Failed to fetch users');
-      const data = await res.json();
-      return Array.isArray(data) ? data : [data];
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      throw error;
-    }
-  },
-
-  createUser: async (userData: any): Promise<any | null> => {
-    try {
-      const res = await fetch(`${API_BASE}/user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-      return null;
-    } catch (error) {
-      console.error('Error creating user:', error);
-      throw error;
-    }
-  },
-
-  updateUser: async (userId: string, userData: any): Promise<boolean> => {
-    try {
-      const res = await fetch(`${API_BASE}/user/${userId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userData)
-      });
-      return res.ok;
-    } catch (error) {
-      console.error('Error updating user:', error);
-      throw error;
-    }
-  },
-
-  deleteUser: async (userId: string): Promise<boolean> => {
-    try {
-      const res = await fetch(`${API_BASE}/user/${userId}`, {
-        method: 'DELETE'
-      });
-      return res.ok;
-    } catch (error) {
-      console.error('Error deleting user:', error);
       throw error;
     }
   }

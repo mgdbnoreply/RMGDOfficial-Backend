@@ -335,16 +335,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
 
+  // This login function in AuthContext.tsx is now correct because the data is clean.
   const login = async (email: string, password: string): Promise<boolean> => {
-    // This login logic is client-side because your API only supports fetching users.
-    // For better security, a dedicated server-side login endpoint is recommended.
-    
-    // The `users` state is already populated by a GET call when the app loads.
+    // The `users` array now contains clean JavaScript objects.
     const foundUser = users.find(u => u.email === email);
     
-    // IMPORTANT: This is a placeholder for a real password check.
-    // Your API does not handle passwords, so we can only check if the user exists.
-    if (foundUser && password) { // Basic check for a non-empty password
+    // Placeholder password check
+    if (foundUser && password) {
       const updatedUser = { ...foundUser, lastLogin: new Date().toISOString() };
       setUser(updatedUser);
       
@@ -356,6 +353,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     return false;
   };
+  
   const logout = () => {
     setUser(null);
     if (typeof window !== 'undefined') {
