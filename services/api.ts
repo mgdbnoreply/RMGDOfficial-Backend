@@ -309,12 +309,12 @@ export const DashboardAPI = {
 // ===== USER API (FINALIZED AND CORRECTED) =====
 export const UserAPI = {
   /**
-   * Calls the POST /login endpoint to authenticate a user.
+   * [UPDATED] Calls the POST /user endpoint to authenticate a user.
    */
   login: async (email: string, password: string): Promise<any | null> => {
     try {
-      // No change needed here, it was already correct
-      const res = await fetch(`${API_BASE}/login`, {
+      // Change the endpoint from /login to /user
+      const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -326,6 +326,7 @@ export const UserAPI = {
       return null;
     }
   },
+
 
   /**
    * CORRECTED: Calls the GET /user endpoint (singular) to fetch all users.
