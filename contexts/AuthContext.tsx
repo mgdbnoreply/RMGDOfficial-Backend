@@ -335,32 +335,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
 
-  // Replace the old login function in RMGDOfficial-Backend/contexts/AuthContext.tsx with this
-
   const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      const loggedInUser = await UserAPI.login(email, password);
+    // This login logic is client-side because your API only supports fetching users.
+    // For better security, a dedicated server-side login endpoint is recommended.
+    
+    // The `users` state is already populated by a GET call when the app loads.
+    const foundUser = users.find(u => u.email === email);
+    
+    // IMPORTANT: This is a placeholder for a real password check.
+    // Your API does not handle passwords, so we can only check if the user exists.
+    if (foundUser && password) { // Basic check for a non-empty password
+      const updatedUser = { ...foundUser, lastLogin: new Date().toISOString() };
+      setUser(updatedUser);
       
-      if (loggedInUser) {
-        // The API successfully authenticated the user
-        const updatedUser = { ...loggedInUser, lastLogin: new Date().toISOString() };
-        setUser(updatedUser);
-        
-        // Update the user's "lastLogin" time in the main users list
-        setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
-
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('rmgd_admin_user', JSON.stringify(updatedUser));
-        }
-        return true;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rmgd_admin_user', JSON.stringify(updatedUser));
       }
-      
-      // The API returned null, meaning login failed (invalid credentials)
-      return false;
-    } catch (error) {
-      console.error("Login process failed:", error);
-      return false;
+      return true;
     }
+    
+    return false;
   };
   const logout = () => {
     setUser(null);
