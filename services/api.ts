@@ -290,24 +290,45 @@ export const CollectionsAPI = {
   }
 };
 
-// ===== USER API (FINAL VERSION) =====
+// ===== USER API (FINALIZED) =====
+// This object contains all functions for interacting with your user-related endpoints.
 export const UserAPI = {
-  // REMOVED the login function as there is no /login endpoint.
+  /**
+   * Calls the POST /login endpoint to authenticate a user.
+   */
+  login: async (email: string, password: string): Promise<any | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) return null; // Handles 401 Unauthorized, 400 Bad Request, etc.
+      return await res.json();
+    } catch (error) {
+      console.error('Error in login API call:', error);
+      return null;
+    }
+  },
 
+  /**
+   * Calls the GET /user endpoint to fetch all users.
+   */
   getAllUsers: async (): Promise<any[]> => {
     try {
       const res = await fetch(`${API_BASE}/user`);
-      if (!res.ok) throw new Error('Failed to fetch users from API');
-      const data = await res.json();
-      const items = Array.isArray(data) ? data : [data];
-      // Use the corrected helper to clean the user data
-      return items.map(unmarshallUser).filter(Boolean);
+      if (!res.ok) throw new Error('Failed to fetch users');
+      return await res.json();
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
     }
   },
 
+  /**
+   * Calls the POST /user endpoint to create a new user.
+   * Note: The body uses PascalCase to match the Lambda's expectation (e.g., "Name").
+   */
   createUser: async (userData: { Name: string; Email: string; Role: string }): Promise<any | null> => {
     try {
       const res = await fetch(`${API_BASE}/user`, {
@@ -322,6 +343,10 @@ export const UserAPI = {
     }
   },
 
+  /**
+   * Calls the PUT /user/{UserID} endpoint to update a user.
+   * Note: The body uses PascalCase to match the Lambda's expectation.
+   */
   updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE}/user/${userId}`, {
@@ -336,6 +361,9 @@ export const UserAPI = {
     }
   },
 
+  /**
+   * Calls the DELETE /user/{UserID} endpoint to remove a user.
+   */
   deleteUser: async (userId: string): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE}/user/${userId}`, {
@@ -348,6 +376,7 @@ export const UserAPI = {
     }
   }
 };
+
 
 
 
