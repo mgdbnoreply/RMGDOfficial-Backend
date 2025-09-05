@@ -1,13 +1,16 @@
 "use client";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+// NOTE: The UserAPI has been removed as there is no deployed /users endpoint.
+// User management is now handled on the client-side with localStorage.
+
 interface User {
-  id: string;
-  email: string;
-  role: string;
-  name: string;
-  createdAt: string;
-  lastLogin?: string;
+  UserID: string;
+  Email: string;
+  Role: string;
+  Name: string;
+  CreatedAt: string;
+  LastLogin?: string;
 }
 
 interface AuthContextType {
@@ -18,9 +21,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   // User management functions
-  addUser: (userData: Omit<User, 'id' | 'createdAt'>) => boolean;
-  deleteUser: (userId: string) => boolean;
-  updateUser: (userId: string, userData: Partial<User>) => boolean;
+  addUser: (userData: Omit<User, 'UserID' | 'CreatedAt'>) => Promise<boolean>;
+  deleteUser: (userId: string) => Promise<boolean>;
+  updateUser: (userId: string, userData: Partial<User>) => Promise<boolean>;
   getAllUsers: () => User[];
 }
 
@@ -38,121 +41,87 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Default users
+// Initial default users, including the one from your CSV.
 const defaultUsers: User[] = [
   {
-    id: 'admin-001',
-    email: 'admin@rmgd.org',
-    role: 'admin',
-    name: 'RMGD Administrator',
-    createdAt: '2024-01-01T00:00:00Z',
-    lastLogin: new Date().toISOString()
+    UserID: '001',
+    Email: 'parkar.ar@northeastern.edu',
+    Name: 'Arslan Parkar',
+    Role: 'admin',
+    CreatedAt: '2024-01-01T00:00:00Z',
   },
   {
-    id: 'researcher-001',
-    email: 'researcher@rmgd.org',
-    role: 'researcher',
-    name: 'RMGD Researcher',
-    createdAt: '2024-01-01T00:00:00Z',
-    lastLogin: new Date().toISOString()
+    UserID: 'researcher-001',
+    Email: 'researcher@rmgd.org',
+    Name: 'RMGD Researcher',
+    Role: 'researcher',
+    CreatedAt: '2024-01-01T00:00:00Z',
   },
   {
-    id: 'user-001',
-    email: 'user@rmgd.org',
-    role: 'user',
-    name: 'Community Contributor',
-    createdAt: '2024-01-01T00:00:00Z',
-    lastLogin: new Date().toISOString()
+    UserID: 'user-001',
+    Email: 'user@rmgd.org',
+    Name: 'Community Contributor',
+    Role: 'user',
+    CreatedAt: '2024-01-01T00:00:00Z',
   }
 ];
 
-// Default passwords (in production, this would be hashed)
-const defaultPasswords: Record<string, string> = {
-  'admin@rmgd.org': 'admin',
+// Mock password store, including the password from your CSV.
+const MOCK_PASSWORDS: Record<string, string> = {
+  'parkar.ar@northeastern.edu': 'ib2026ib',
   'researcher@rmgd.org': 'researcher',
   'user@rmgd.org': 'user'
 };
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(defaultUsers);
-  const [passwords, setPasswords] = useState<Record<string, string>>(defaultPasswords);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load state from localStorage on initial render
   useEffect(() => {
-    // Load users and passwords from localStorage
-    if (typeof window !== 'undefined') {
-      let storedUsers: User[] = [];
-      let storedPasswords: Record<string, string> = {};
-      const storedCurrentUser = localStorage.getItem('rmgd_admin_user');
-
-      try {
-        storedUsers = JSON.parse(localStorage.getItem('rmgd_users') || '[]');
-      } catch (error) { 
-        console.error('Failed to parse stored users, using defaults.');
-        storedUsers = [];
-      }
-      
-      try {
-        storedPasswords = JSON.parse(localStorage.getItem('rmgd_passwords') || '{}');
-      } catch (error) {
-        console.error('Failed to parse stored passwords, using defaults.');
-        storedPasswords = {};
+    try {
+      const storedUsers = localStorage.getItem('rmgd_users');
+      if (storedUsers) {
+        setUsers(JSON.parse(storedUsers));
+      } else {
+        setUsers(defaultUsers); // Initialize with defaults if nothing is stored
       }
 
-      // Merge default users to ensure they always exist, preventing stale localStorage issues
-      const userMap = new Map(storedUsers.map(u => [u.email, u]));
-      defaultUsers.forEach(defaultUser => {
-          // Add default user if not present in storage
-          if (!userMap.has(defaultUser.email)) {
-              userMap.set(defaultUser.email, defaultUser);
-          }
-      });
-
-      const finalUsers = Array.from(userMap.values());
-      const finalPasswords = { ...defaultPasswords, ...storedPasswords };
-      
-      setUsers(finalUsers);
-      setPasswords(finalPasswords);
-
-      if (storedCurrentUser) {
-        try {
-          setUser(JSON.parse(storedCurrentUser));
-        } catch (error) {
-          localStorage.removeItem('rmgd_admin_user');
-        }
+      const storedUser = sessionStorage.getItem('rmgd_admin_user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
       }
+    } catch (error) {
+      console.error("Failed to parse from storage, using defaults.", error);
+      setUsers(defaultUsers);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  // Save to localStorage whenever users or passwords change
+  // Persist users to localStorage whenever the users state changes
   useEffect(() => {
-    if (typeof window !== 'undefined' && !loading) {
+    if (!loading) {
       localStorage.setItem('rmgd_users', JSON.stringify(users));
-      localStorage.setItem('rmgd_passwords', JSON.stringify(passwords));
     }
-  }, [users, passwords, loading]);
+  }, [users, loading]);
+
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const foundUser = users.find(u => u.email === email);
-    const storedPassword = passwords[email];
-    
-    if (foundUser && storedPassword === password) {
-      // Update last login
+    const foundUser = users.find(u => u.Email === email);
+    const correctPassword = MOCK_PASSWORDS[email];
+
+    if (foundUser && correctPassword === password) {
       const updatedUser = {
         ...foundUser,
-        lastLogin: new Date().toISOString()
+        LastLogin: new Date().toISOString()
       };
       
       setUser(updatedUser);
-      
-      // Update user in users array
-      setUsers(prev => prev.map(u => u.id === foundUser.id ? updatedUser : u));
-      
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('rmgd_admin_user', JSON.stringify(updatedUser));
-      }
+      sessionStorage.setItem('rmgd_admin_user', JSON.stringify(updatedUser));
+      // Also update the user in our main users list
+      setUsers(currentUsers => currentUsers.map(u => u.UserID === foundUser.UserID ? updatedUser : u));
       return true;
     }
     
@@ -161,85 +130,56 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const logout = () => {
     setUser(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('rmgd_admin_user');
-    }
+    sessionStorage.removeItem('rmgd_admin_user');
   };
 
-  const addUser = (userData: Omit<User, 'id' | 'createdAt'>): boolean => {
-    try {
-      // Check if email already exists
-      if (users.find(u => u.email === userData.email)) {
-        return false;
+  const addUser = async (userData: Omit<User, 'UserID' | 'CreatedAt'>): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (users.find(u => u.Email === userData.Email)) {
+        console.error("User with this email already exists.");
+        resolve(false);
+        return;
       }
 
       const newUser: User = {
         ...userData,
-        id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        createdAt: new Date().toISOString()
+        UserID: `user-${Date.now()}`,
+        CreatedAt: new Date().toISOString(),
       };
 
       setUsers(prev => [...prev, newUser]);
-      
-      // Set default password (user should change this)
-      setPasswords(prev => ({
-        ...prev,
-        [userData.email]: 'changeMe123'
-      }));
-
-      return true;
-    } catch (error) {
-      return false;
-    }
+      // Note: You would need a system to manage passwords for new users.
+      // For this mock, we'll just log a note.
+      console.log(`User ${newUser.Email} created. Set a mock password if needed for testing.`);
+      resolve(true);
+    });
   };
 
-  const deleteUser = (userId: string): boolean => {
-    try {
-      const userToDelete = users.find(u => u.id === userId);
-      if (!userToDelete) return false;
-
-      // Don't allow deleting the currently logged-in user
-      if (user?.id === userId) return false;
-
-      // Don't allow deleting the main admin
-      if (userToDelete.email === 'admin@rmgd.org') return false;
-
-      setUsers(prev => prev.filter(u => u.id !== userId));
-      
-      // Remove password
-      setPasswords(prev => {
-        const newPasswords = { ...prev };
-        delete newPasswords[userToDelete.email];
-        return newPasswords;
-      });
-
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const updateUser = (userId: string, userData: Partial<User>): boolean => {
-    try {
-      const userIndex = users.findIndex(u => u.id === userId);
-      if (userIndex === -1) return false;
-
-      const updatedUser = { ...users[userIndex], ...userData };
-      
-      setUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
-      
-      // If updating current user, update the current user state
-      if (user?.id === userId) {
-        setUser(updatedUser);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('rmgd_admin_user', JSON.stringify(updatedUser));
+  const deleteUser = async (userId: string): Promise<boolean> => {
+     return new Promise((resolve) => {
+        if (user?.UserID === userId) {
+            console.error("Cannot delete the currently logged-in user.");
+            resolve(false);
+            return;
         }
-      }
+        setUsers(prev => prev.filter(u => u.UserID !== userId));
+        resolve(true);
+    });
+  };
 
-      return true;
-    } catch (error) {
-      return false;
-    }
+  const updateUser = async (userId: string, userData: Partial<User>): Promise<boolean> => {
+    return new Promise((resolve) => {
+        setUsers(prevUsers => prevUsers.map(u => 
+            u.UserID === userId ? { ...u, ...userData } : u
+        ));
+        
+        if (user?.UserID === userId) {
+            const updatedCurrentUser = { ...user, ...userData };
+            setUser(updatedCurrentUser);
+            sessionStorage.setItem('rmgd_admin_user', JSON.stringify(updatedCurrentUser));
+        }
+        resolve(true);
+    });
   };
 
   const getAllUsers = (): User[] => {
@@ -265,4 +205,3 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     </AuthContext.Provider>
   );
 };
-

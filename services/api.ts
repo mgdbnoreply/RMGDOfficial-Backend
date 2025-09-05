@@ -1,28 +1,27 @@
 import { Game } from '@/types';
 
+// The single, unified base URL for your entire API on AWS API Gateway.
 const API_BASE = 'https://u3iysopa88.execute-api.us-east-1.amazonaws.com';
+
+// Define the specific path for the games resource
+const GAMES_API_PATH = `${API_BASE}/games`;
 
 // Helper function to convert frontend Game object to DynamoDB format
 const convertToDynamoDBFormat = (gameData: any) => {
   const formatted: any = {};
   
-  // Convert each field to DynamoDB format if needed
   Object.keys(gameData).forEach(key => {
     const value = gameData[key];
     
-    // Check if already in DynamoDB format
     if (value && typeof value === 'object' && (value.S !== undefined || value.SS !== undefined || value.N !== undefined)) {
       formatted[key] = value;
     } 
-    // Convert strings to DynamoDB format
     else if (typeof value === 'string') {
       formatted[key] = { S: value };
     }
-    // Convert string arrays to DynamoDB format
     else if (Array.isArray(value)) {
       formatted[key] = { SS: value };
     }
-    // Handle numbers
     else if (typeof value === 'number') {
       formatted[key] = { N: value.toString() };
     }
@@ -31,11 +30,11 @@ const convertToDynamoDBFormat = (gameData: any) => {
   return formatted;
 };
 
-// ===== EXISTING GAME API =====
+// ===== GAME API =====
 export const GameAPI = {
   getAllGames: async (): Promise<Game[]> => {
     try {
-      const res = await fetch(`${API_BASE}/games`);
+      const res = await fetch(GAMES_API_PATH);
       if (!res.ok) throw new Error('Failed to fetch games');
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
@@ -47,7 +46,7 @@ export const GameAPI = {
 
   getGameById: async (gameId: string): Promise<Game> => {
     try {
-      const res = await fetch(`${API_BASE}/games/${gameId}`);
+      const res = await fetch(`${GAMES_API_PATH}/${gameId}`);
       if (!res.ok) throw new Error('Failed to fetch game');
       return await res.json();
     } catch (error) {
@@ -58,18 +57,13 @@ export const GameAPI = {
 
   createGame: async (gameData: any): Promise<Game | null> => {
     try {
-      // Ensure data is in DynamoDB format
       const formattedData = gameData.GameTitle?.S 
         ? gameData 
         : convertToDynamoDBFormat(gameData);
       
-      console.log('Creating game with data:', formattedData);
-      
-      const res = await fetch(`${API_BASE}/games`, {
+      const res = await fetch(GAMES_API_PATH, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formattedData)
       });
       
@@ -88,24 +82,11 @@ export const GameAPI = {
 
   updateGame: async (gameId: string, gameData: any): Promise<boolean> => {
     try {
-      console.log('=== UPDATE GAME DEBUG ===');
-      console.log('Game ID:', gameId);
-      console.log('Original gameData:', gameData);
+      let formattedData = gameData.GameTitle && typeof gameData.GameTitle === 'object' && gameData.GameTitle.S !== undefined
+        ? gameData
+        : convertToDynamoDBFormat(gameData);
       
-      // Check if data is already in DynamoDB format
-      let formattedData;
-      if (gameData.GameTitle && typeof gameData.GameTitle === 'object' && gameData.GameTitle.S !== undefined) {
-        console.log('Data is already in DynamoDB format');
-        formattedData = gameData;
-      } else {
-        console.log('Converting to DynamoDB format');
-        formattedData = convertToDynamoDBFormat(gameData);
-      }
-      
-      console.log('Formatted data being sent:', JSON.stringify(formattedData, null, 2));
-      console.log('API URL:', `${API_BASE}/games/${gameId}`);
-      
-      const res = await fetch(`${API_BASE}/games/${gameId}`, {
+      const res = await fetch(`${GAMES_API_PATH}/${gameId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -114,168 +95,26 @@ export const GameAPI = {
         body: JSON.stringify(formattedData)
       });
       
-      console.log('Response received:');
-      console.log('- Status:', res.status);
-      console.log('- Status Text:', res.statusText);
-      console.log('- Headers:', Object.fromEntries(res.headers.entries()));
-      
       if (!res.ok) {
         const errorText = await res.text().catch(() => 'Could not read error response');
-        console.error('Update failed. Error response:', errorText);
-        throw new Error(`Failed to update game: ${res.status} ${res.statusText}`);
+        throw new Error(`Failed to update game: ${res.status} ${res.statusText} - ${errorText}`);
       }
-      
-      const result = await res.json().catch(() => ({ message: 'Update completed' }));
-      console.log('Update successful. Response:', result);
-      console.log('=== END UPDATE GAME DEBUG ===');
       
       return true;
     } catch (error) {
-      console.error('=== UPDATE GAME ERROR ===');
-      console.error('Error details:', error);
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        console.error('This is likely a CORS error. Check:');
-        console.error('1. API Gateway OPTIONS method is configured');
-        console.error('2. API Gateway has been deployed');
-        console.error('3. Lambda returns CORS headers');
-      }
-      console.error('=== END UPDATE GAME ERROR ===');
+      console.error('Error updating game:', error);
       throw error;
     }
   },
 
   deleteGame: async (gameId: string): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_BASE}/games/${gameId}`, {
+      const res = await fetch(`${GAMES_API_PATH}/${gameId}`, {
         method: 'DELETE'
       });
       return res.ok;
     } catch (error) {
       console.error('Error deleting game:', error);
-      throw error;
-    }
-  }
-};
-
-// ===== NEW COLLECTIONS API =====
-export const CollectionsAPI = {
-  getAllCollections: async (): Promise<any[]> => {
-    try {
-      const res = await fetch(`${API_BASE}/collections`);
-      if (!res.ok) throw new Error('Failed to fetch collections');
-      const data = await res.json();
-      return Array.isArray(data) ? data : [data];
-    } catch (error) {
-      console.error('Error fetching collections:', error);
-      throw error;
-    }
-  },
-
-  getCollectionById: async (collectionId: string): Promise<any> => {
-    try {
-      const res = await fetch(`${API_BASE}/collections/${collectionId}`);
-      if (!res.ok) throw new Error('Failed to fetch collection');
-      const data = await res.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching collection:', error);
-      throw error;
-    }
-  },
-
-  createCollection: async (collectionData: any): Promise<any | null> => {
-    try {
-      const res = await fetch(`${API_BASE}/collections`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(collectionData)
-      });
-      
-      if (res.ok) {
-        const result = await res.json();
-        return result.collection || result;
-      } else {
-        const errorDetails = await res.text();
-        console.error('Create collection failed:', errorDetails);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error creating collection:', error);
-      throw error;
-    }
-  },
-
-  updateCollection: async (collectionId: string, collectionData: any): Promise<boolean> => {
-    try {
-      const res = await fetch(`${API_BASE}/collections/${collectionId}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(collectionData)
-      });
-      
-      if (res.ok) {
-        return true;
-      } else {
-        const errorDetails = await res.text();
-        console.error('Update collection failed:', errorDetails);
-        return false;
-      }
-    } catch (error) {
-      console.error('Error updating collection:', error);
-      throw error;
-    }
-  },
-
-  deleteCollection: async (collectionId: string): Promise<boolean> => {
-    try {
-      const res = await fetch(`${API_BASE}/collections/${collectionId}`, {
-        method: 'DELETE'
-      });
-      return res.ok;
-    } catch (error) {
-      console.error('Error deleting collection:', error);
-      throw error;
-    }
-  },
-
-  getCollectionsByType: async (type: string): Promise<any[]> => {
-    try {
-      const res = await fetch(`${API_BASE}/collections?type=${type}`);
-      if (!res.ok) throw new Error(`Failed to fetch collections by type: ${type}`);
-      const data = await res.json();
-      return Array.isArray(data) ? data : [data];
-    } catch (error) {
-      console.error('Error fetching collections by type:', error);
-      throw error;
-    }
-  },
-
-  searchCollections: async (query: string): Promise<any[]> => {
-    try {
-      const res = await fetch(`${API_BASE}/collections/search?q=${encodeURIComponent(query)}`);
-      if (!res.ok) throw new Error('Failed to search collections');
-      const data = await res.json();
-      return Array.isArray(data) ? data : [data];
-    } catch (error) {
-      console.error('Error searching collections:', error);
-      throw error;
-    }
-  }
-};
-
-// ===== EXISTING DASHBOARD API =====
-export const DashboardAPI = {
-  getDashboardStats: async (): Promise<any> => {
-    try {
-      const res = await fetch(`${API_BASE}/games/stats`);
-      if (!res.ok) throw new Error('Failed to fetch dashboard stats');
-      return await res.json();
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       throw error;
     }
   }
