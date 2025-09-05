@@ -290,20 +290,36 @@ export const CollectionsAPI = {
   }
 };
 
-// ===== USER API (FINALIZED) =====
-// This object contains all functions for interacting with your user-related endpoints.
+
+
+// ===== DASHBOARD API (UNCHANGED) =====
+export const DashboardAPI = {
+  getDashboardStats: async (): Promise<any> => {
+    try {
+      const res = await fetch(`${API_BASE}/games/stats`);
+      if (!res.ok) throw new Error('Failed to fetch dashboard stats');
+      return await res.json();
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  }
+};
+
+// ===== USER API (FINALIZED AND CORRECTED) =====
 export const UserAPI = {
   /**
    * Calls the POST /login endpoint to authenticate a user.
    */
   login: async (email: string, password: string): Promise<any | null> => {
     try {
+      // No change needed here, it was already correct
       const res = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) return null; // Handles 401 Unauthorized, 400 Bad Request, etc.
+      if (!res.ok) return null;
       return await res.json();
     } catch (error) {
       console.error('Error in login API call:', error);
@@ -312,10 +328,11 @@ export const UserAPI = {
   },
 
   /**
-   * Calls the GET /user endpoint to fetch all users.
+   * CORRECTED: Calls the GET /user endpoint (singular) to fetch all users.
    */
   getAllUsers: async (): Promise<any[]> => {
     try {
+      // The endpoint is /user, not /users
       const res = await fetch(`${API_BASE}/user`);
       if (!res.ok) throw new Error('Failed to fetch users');
       return await res.json();
@@ -327,7 +344,6 @@ export const UserAPI = {
 
   /**
    * Calls the POST /user endpoint to create a new user.
-   * Note: The body uses PascalCase to match the Lambda's expectation (e.g., "Name").
    */
   createUser: async (userData: { Name: string; Email: string; Role: string }): Promise<any | null> => {
     try {
@@ -345,7 +361,6 @@ export const UserAPI = {
 
   /**
    * Calls the PUT /user/{UserID} endpoint to update a user.
-   * Note: The body uses PascalCase to match the Lambda's expectation.
    */
   updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string }): Promise<boolean> => {
     try {
@@ -372,24 +387,6 @@ export const UserAPI = {
       return res.ok;
     } catch (error) {
       console.error('Error deleting user:', error);
-      throw error;
-    }
-  }
-};
-
-
-
-
-
-// ===== DASHBOARD API (UNCHANGED) =====
-export const DashboardAPI = {
-  getDashboardStats: async (): Promise<any> => {
-    try {
-      const res = await fetch(`${API_BASE}/games/stats`);
-      if (!res.ok) throw new Error('Failed to fetch dashboard stats');
-      return await res.json();
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       throw error;
     }
   }
