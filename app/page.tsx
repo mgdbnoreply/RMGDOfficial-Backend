@@ -5,28 +5,12 @@ import { GameAPI } from '@/services/api';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Login from '@/components/Login';
 import Sidebar from '@/components/Sidebar';
-import ConsoleCollection from '@/components/ConsoleCollection';
 import UserManagement from '@/components/UserManagement';
 import GamesTab from '@/components/GamesTab';
 import AnalyticsTab from '@/components/AnalyticsTab';
 import UserDashboard from '@/components/UserDashboard';
 import AdminApprovalQueue from '@/components/AdminApprovalQueue';
 import AdminTab from '@/components/AdminTab';
-
-// Collection interface for top-level state management
-interface Collection {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  maker: string;
-  year: string;
-  image: string;
-  productId: string;
-  status?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
 
 function DashboardContent() {
   const [activeTab, setActiveTab] = useState('games');
@@ -55,7 +39,7 @@ function DashboardContent() {
     try {
       const data = await GameAPI.getAllGames();
       setGames(data);
-    } catch (err: any) {
+    } catch (err: any) in {
       setError(`Failed to load games: ${err.message}`);
       setGames([]);
     } finally {
@@ -199,7 +183,7 @@ function DashboardContent() {
                     onDeleteGame={handleDeleteGame}
                   />
                 )}
-                {activeTab === 'analytics' && <AnalyticsTab />}
+                {activeTab === 'analytics' && <AnalyticsTab games={games} />}
               </>
             )}
 
