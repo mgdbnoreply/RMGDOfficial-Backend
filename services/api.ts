@@ -280,3 +280,66 @@ export const DashboardAPI = {
     }
   }
 };
+
+
+// ===== NEW USER API =====
+export const UserAPI = {
+  getAllUsers: async (): Promise<any[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/user`);
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      return Array.isArray(data) ? data : [data];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+
+  createUser: async (userData: any): Promise<any | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      });
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+
+  updateUser: async (userId: string, userData: any): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/user/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
+      });
+      return res.ok;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  },
+
+  deleteUser: async (userId: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/user/${userId}`, {
+        method: 'DELETE'
+      });
+      return res.ok;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw error;
+    }
+  }
+};
