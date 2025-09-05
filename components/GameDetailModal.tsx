@@ -95,12 +95,8 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
                         <DetailItem icon={Building} label="Developer" value={game.Developer?.S} />
                         <DetailItem icon={Users2} label="Players" value={(game as any).Players?.S} />
                         <DetailItem icon={Globe} label="Developer Location" value={(game as any).DeveloperLocation?.S} />
-                        <DetailItem icon={Gamepad} label="Control Mechanisms" value={(game as any).ControlMechanisms?.S} />
                         <DetailItem icon={Cpu} label="Hardware Features" value={(game as any).HardwareFeatures?.S} />
                         <DetailItem icon={Wifi} label="Connectivity" value={(game as any).Connectivity?.S} />
-                        <DetailItem icon={Tv} label="Device Type" value={(game as any).DeviceType?.S} />
-                        <DetailItem icon={DollarSign} label="Monetization" value={(game as any).MonetizationModel?.S} />
-                        <DetailItem icon={Code} label="Open Source" value={(game as any).OpenSource?.S} />
                         <DetailItem icon={Info} label="Purpose" value={(game as any).Purpose?.S} />
                     </div>
                 </div>
@@ -109,7 +105,7 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Media */}
-              {(game.Photos?.SS?.length > 0 || (game as any).Videos?.SS?.length > 0) && (
+              {(game.Photos?.SS?.length > 0) && (
                 <div className="academic-card p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center"><div className="w-2 h-6 bg-green-600 rounded mr-3"></div>Media Assets</h3>
                     {game.Photos?.SS?.length > 0 && (
@@ -119,19 +115,6 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
                                 {game.Photos.SS.map((url, i) => (
                                     <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="relative group">
                                         <img src={url} alt={`Screenshot ${i + 1}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
-                                    </a>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                     {(game as any).Videos?.SS?.filter((v: string) => v.trim() !== '').length > 0 && (
-                        <div>
-                            <h4 className="font-medium text-gray-800 mb-2">Videos</h4>
-                             <div className="space-y-2">
-                                {(game as any).Videos.SS.filter((v: string) => v.trim() !== '').map((url: string, i: number) => (
-                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg hover:bg-gray-100">
-                                        <PlayCircle className="w-5 h-5 text-red-600"/>
-                                        <span className="text-sm text-blue-700 truncate">Video Link {i + 1}</span>
                                     </a>
                                 ))}
                             </div>

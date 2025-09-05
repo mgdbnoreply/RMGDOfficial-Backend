@@ -93,18 +93,11 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
         Genre: game.Genre?.S || '',
         Photos: game.Photos?.SS || [],
         Connectivity: (game as any).Connectivity?.S || '',
-        ControlMechanisms: (game as any).ControlMechanisms?.S || '',
         DeveloperLocation: (game as any).DeveloperLocation?.S || '',
-        DeviceType: (game as any).DeviceType?.S || '',
         GameWebsite: (game as any).GameWebsite?.S || '',
         HardwareFeatures: (game as any).HardwareFeatures?.S || '',
-        MobilityType: (game as any).MobilityType?.S || '',
-        MonetizationModel: (game as any).MonetizationModel?.S || '',
-        OpenSource: (game as any).OpenSource?.S || '',
         Players: (game as any).Players?.S || '',
         Purpose: (game as any).Purpose?.S || '',
-        SiteSpecific: (game as any).SiteSpecific?.S || '',
-        Videos: (game as any).Videos?.SS || []
       };
 
       const success = await GameAPI.updateGame(game.GameID.S, gameData);
@@ -121,18 +114,11 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
           Photos: { SS: gameData.Photos },
           // Update other fields if they exist
           ...(gameData.Connectivity && { Connectivity: { S: gameData.Connectivity } }),
-          ...(gameData.ControlMechanisms && { ControlMechanisms: { S: gameData.ControlMechanisms } }),
           ...(gameData.DeveloperLocation && { DeveloperLocation: { S: gameData.DeveloperLocation } }),
-          ...(gameData.DeviceType && { DeviceType: { S: gameData.DeviceType } }),
           ...(gameData.GameWebsite && { GameWebsite: { S: gameData.GameWebsite } }),
           ...(gameData.HardwareFeatures && { HardwareFeatures: { S: gameData.HardwareFeatures } }),
-          ...(gameData.MobilityType && { MobilityType: { S: gameData.MobilityType } }),
-          ...(gameData.MonetizationModel && { MonetizationModel: { S: gameData.MonetizationModel } }),
-          ...(gameData.OpenSource && { OpenSource: { S: gameData.OpenSource } }),
           ...(gameData.Players && { Players: { S: gameData.Players } }),
           ...(gameData.Purpose && { Purpose: { S: gameData.Purpose } }),
-          ...(gameData.SiteSpecific && { SiteSpecific: { S: gameData.SiteSpecific } }),
-          ...(gameData.Videos && { Videos: { SS: gameData.Videos } })
         };
         
         // Update local state instead of full refresh

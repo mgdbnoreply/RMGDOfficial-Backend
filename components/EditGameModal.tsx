@@ -12,11 +12,10 @@ interface EditGameModalProps {
 export default function EditGameModal({ game, onSave, onCancel, loading }: EditGameModalProps) {
   const [editData, setEditData] = useState<Game>(game);
   const [photoInput, setPhotoInput] = useState('');
-  const [videoInput, setVideoInput] = useState('');
 
   const updateField = (field: keyof Game, value: any) => {
     // Handle string set fields
-    if (field === 'Photos' || field === 'Videos') {
+    if (field === 'Photos') {
       setEditData(prev => ({
         ...prev,
         [field]: { SS: value }
@@ -30,7 +29,7 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
     }
   };
   
-  const addMedia = (type: 'Photos' | 'Videos', input: string, setInput: (val: string) => void) => {
+  const addMedia = (type: 'Photos', input: string, setInput: (val: string) => void) => {
     if (input.trim()) {
       const currentMedia = editData[type]?.SS || [];
       updateField(type, [...currentMedia, input.trim()]);
@@ -38,7 +37,7 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
     }
   };
 
-  const removeMedia = (type: 'Photos' | 'Videos', index: number) => {
+  const removeMedia = (type: 'Photos', index: number) => {
     const currentMedia = editData[type]?.SS || [];
     updateField(type, currentMedia.filter((_, i) => i !== index));
   };
@@ -66,7 +65,7 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
         <div className="p-6 space-y-6">
             {/* All Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                {Object.keys(editData).filter(key => key !== 'GameID' && key !== 'Photos' && key !== 'Videos' && key !== 'GameDescription').map(key => (
+                {Object.keys(editData).filter(key => !['GameID', 'Photos', 'Videos', 'GameDescription', 'Articles', 'ControlMechanisms', 'MobilityType', 'MonetizationModel', 'OpenSource', 'DeviceType', 'SiteSpecific'].includes(key)).map(key => (
                     <div key={key}>
                         <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
                         <input
@@ -109,22 +108,6 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
                         ))}
                     </div>
                 </div>
-                {/* Videos */}
-                <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Videos</label>
-                    <div className="flex gap-2">
-                        <input type="url" value={videoInput} onChange={e => setVideoInput(e.target.value)} placeholder="Add video URL" className="academic-input flex-1"/>
-                        <button onClick={() => addMedia('Videos', videoInput, setVideoInput)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Plus size={16}/></button>
-                    </div>
-                    <div className="space-y-1">
-                        {(editData.Videos?.SS || []).map((url, index) => (
-                            <div key={index} className="flex items-center bg-gray-50 p-2 rounded">
-                                <span className="text-xs truncate flex-1">{url}</span>
-                                <button onClick={() => removeMedia('Videos', index)} className="ml-2 text-red-500 hover:text-red-700"><X size={14}/></button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -151,4 +134,3 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
     </div>
   );
 }
-

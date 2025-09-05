@@ -16,23 +16,15 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
     YearDeveloped: '',
     Genre: '',
     Photos: [],
-    Videos: [],
     Connectivity: '',
-    ControlMechanisms: '',
     DeveloperLocation: '',
-    DeviceType: '',
     GameWebsite: '',
     HardwareFeatures: '',
-    MobilityType: '',
-    MonetizationModel: '',
-    OpenSource: '',
     Players: '',
     Purpose: '',
-    SiteSpecific: '',
   });
 
   const [photoInput, setPhotoInput] = useState('');
-  const [videoInput, setVideoInput] = useState('');
   const [validationError, setValidationError] = useState('');
 
   const handleSubmit = async () => {
@@ -53,27 +45,15 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
 
   const addPhoto = () => {
     if (photoInput.trim()) {
-      handleInputChange('Photos', [...formData.Photos, photoInput.trim()]);
+      handleInputChange('Photos', [...(formData.Photos || []), photoInput.trim()]);
       setPhotoInput('');
     }
   };
 
   const removePhoto = (index: number) => {
-    handleInputChange('Photos', formData.Photos.filter((_, i) => i !== index));
+    handleInputChange('Photos', (formData.Photos || []).filter((_, i) => i !== index));
   };
   
-  const addVideo = () => {
-    if (videoInput.trim()) {
-      handleInputChange('Videos', [...formData.Videos, videoInput.trim()]);
-      setVideoInput('');
-    }
-  };
-
-  const removeVideo = (index: number) => {
-    handleInputChange('Videos', formData.Videos.filter((_, i) => i !== index));
-  };
-
-
   const commonGenres = [
     'Action', 'Adventure', 'Puzzle', 'Strategy', 'Sports', 'Racing',
     'Simulation', 'Arcade', 'RPG', 'Platform', 'Shooter', 'Educational'
@@ -139,16 +119,8 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
                       <input type="text" value={formData.Players} onChange={(e) => handleInputChange('Players', e.target.value)} className="academic-input w-full" placeholder="e.g., Single-player" />
                   </div>
                   <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Control Mechanisms</label>
-                      <input type="text" value={formData.ControlMechanisms} onChange={(e) => handleInputChange('ControlMechanisms', e.target.value)} className="academic-input w-full" placeholder="e.g., Keypad" />
-                  </div>
-                  <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
                       <input type="text" value={formData.Purpose} onChange={(e) => handleInputChange('Purpose', e.target.value)} className="academic-input w-full" placeholder="e.g., Entertainment" />
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Monetization Model</label>
-                      <input type="text" value={formData.MonetizationModel} onChange={(e) => handleInputChange('MonetizationModel', e.target.value)} className="academic-input w-full" placeholder="e.g., Pre-installed" />
                   </div>
               </div>
           </div>
@@ -157,10 +129,6 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
           <div className="academic-card p-6">
               <h4 className="text-lg font-semibold text-gray-900 mb-4">Technical Details</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Device Type</label>
-                      <input type="text" value={formData.DeviceType} onChange={(e) => handleInputChange('DeviceType', e.target.value)} className="academic-input w-full" placeholder="e.g., Mobile Phone" />
-                  </div>
                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Hardware Features</label>
                       <input type="text" value={formData.HardwareFeatures} onChange={(e) => handleInputChange('HardwareFeatures', e.target.value)} className="academic-input w-full" placeholder="e.g., Monochrome display" />
@@ -168,18 +136,6 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
                   <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Connectivity</label>
                       <input type="text" value={formData.Connectivity} onChange={(e) => handleInputChange('Connectivity', e.target.value)} className="academic-input w-full" placeholder="e.g., N/A" />
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Mobility Type</label>
-                      <input type="text" value={formData.MobilityType} onChange={(e) => handleInputChange('MobilityType', e.target.value)} className="academic-input w-full" placeholder="e.g., Portable" />
-                  </div>
-                   <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Open Source</label>
-                      <input type="text" value={formData.OpenSource} onChange={(e) => handleInputChange('OpenSource', e.target.value)} className="academic-input w-full" placeholder="e.g., N" />
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Site Specific</label>
-                      <input type="text" value={formData.SiteSpecific} onChange={(e) => handleInputChange('SiteSpecific', e.target.value)} className="academic-input w-full" placeholder="e.g., Not site-specific" />
                   </div>
               </div>
           </div>
@@ -201,7 +157,7 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
                     <button onClick={addPhoto} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Plus size={16}/></button>
                 </div>
                 <div className="space-y-1">
-                    {formData.Photos.map((url, index) => (
+                    {(formData.Photos || []).map((url, index) => (
                         <div key={index} className="flex items-center bg-gray-50 p-2 rounded">
                             <span className="text-xs truncate flex-1">{url}</span>
                             <button onClick={() => removePhoto(index)} className="ml-2 text-red-500 hover:text-red-700"><X size={14}/></button>
@@ -209,24 +165,7 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
                     ))}
                 </div>
             </div>
-            {/* Videos */}
-            <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Videos</label>
-                <div className="flex gap-2">
-                    <input type="url" value={videoInput} onChange={e => setVideoInput(e.target.value)} placeholder="Add video URL" className="academic-input flex-1"/>
-                    <button onClick={addVideo} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Plus size={16}/></button>
-                </div>
-                 <div className="space-y-1">
-                    {formData.Videos.map((url, index) => (
-                        <div key={index} className="flex items-center bg-gray-50 p-2 rounded">
-                            <span className="text-xs truncate flex-1">{url}</span>
-                            <button onClick={() => removeVideo(index)} className="ml-2 text-red-500 hover:text-red-700"><X size={14}/></button>
-                        </div>
-                    ))}
-                </div>
-            </div>
           </div>
-
         </div>
 
         {/* Footer */}

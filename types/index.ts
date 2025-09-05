@@ -8,44 +8,30 @@ export type Game = {
   YearDeveloped: { S: string };
   Genre: { S: string };
   Photos: { SS: string[] };
-  // ADDED: New detailed fields
+  Articles?: { SS: string[] };
   Connectivity?: { S: string };
-  ControlMechanisms?: { S: string };
   DeveloperLocation?: { S: string };
-  DeviceType?: { S: string };
   GameWebsite?: { S: string };
   HardwareFeatures?: { S: string };
-  MobilityType?: { S: string };
-  MonetizationModel?: { S: string };
-  OpenSource?: { S: string };
   Players?: { S: string };
   Purpose?: { S: string };
-  SiteSpecific?: { S: string };
-  Videos?: { SS: string[] };
   [key: string]: unknown;
 };
 
 export type NewGame = {
   GameTitle: string;
-  GameDescription: string;
   Developer: string;
-  YearDeveloped: string;
-  Genre: string;
-  Photos: string[];
-  // ADDED: New detailed fields for creation
-  Connectivity: string;
-  ControlMechanisms: string;
-  DeveloperLocation: string;
-  DeviceType: string;
-  GameWebsite: string;
-  HardwareFeatures: string;
-  MobilityType: string;
-  MonetizationModel: string;
-  OpenSource: string;
-  Players: string;
-  Purpose: string;
-  SiteSpecific: string;
-  Videos: string[];
+  GameDescription?: string;
+  YearDeveloped?: string;
+  Genre?: string;
+  Photos?: string[];
+  Articles?: string[];
+  Connectivity?: string;
+  DeveloperLocation?: string;
+  GameWebsite?: string;
+  HardwareFeatures?: string;
+  Players?: string;
+  Purpose?: string;
 };
 
 export type DashboardStats = {
@@ -672,4 +658,3 @@ export type ThemeConfig = {
     secondary: string;
   };
 };
-
