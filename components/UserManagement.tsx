@@ -22,10 +22,11 @@ export default function UserManagement() {
   const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'researcher');
   const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'researcher');
 
-  const handleAddUser = () => {
+  // CORRECTED: Made this function async and added await
+  const handleAddUser = async () => {
     if (!newUser.email.trim() || !newUser.name.trim()) return;
     
-    const success = addUser({
+    const success = await addUser({
       email: newUser.email,
       name: newUser.name,
       role: newUser.role
@@ -39,17 +40,19 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeleteUser = (userId: string) => {
+  // CORRECTED: Made this function async and added await
+  const handleDeleteUser = async (userId: string) => {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      const success = deleteUser(userId);
+      const success = await deleteUser(userId);
       if (!success) {
         alert('Cannot delete this user.');
       }
     }
   };
 
-  const handleUpdateUser = (userId: string, field: string, value: string) => {
-    updateUser(userId, { [field]: value });
+  // CORRECTED: Made this function async and added await
+  const handleUpdateUser = async (userId: string, field: string, value: string) => {
+    await updateUser(userId, { [field]: value });
     setEditingUser(null);
   };
 
@@ -290,7 +293,7 @@ export default function UserManagement() {
           
           <div className="mt-6 p-6 bg-amber-50 border border-amber-200 rounded-xl">
             <p className="text-amber-800 text-base font-medium mb-2">Default Password</p>
-            <p className="text-amber-700 text-base">New users will have the password: <code className="bg-amber-100 px-2 py-1 rounded">changeMe123</code></p>
+            <p className="text-amber-700 text-base">New users will have a default password set by the API.</p>
             <p className="text-amber-600 text-sm mt-2">Users should change this password after first login.</p>
           </div>
         </div>
