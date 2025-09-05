@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { UserAPI } from '@/services/api'; // We still need the API to get user data
+import { UserAPI } from '@/services/api';
 
 interface User {
   id: string;
@@ -38,16 +38,12 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// ==================== NEW CODE STARTS HERE ====================
-// TEMPORARY: A client-side dictionary for passwords.
-// This is NOT secure for production but will allow you to log in.
+// TEMPORARY: Client-side password dictionary for login.
 const tempPasswords: Record<string, string> = {
   'admin@rmgd.org': 'admin',
   'researcher@rmgd.org': 'researcher',
   'user@rmgd.org': 'user'
 };
-// ==================== NEW CODE ENDS HERE ====================
-
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
@@ -56,8 +52,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log("AuthContext: Starting to initialize and fetch users...");
       try {
         const fetchedUsers = await UserAPI.getAllUsers();
+        
+        // ==================== DIAGNOSTIC LOG 1 ====================
+        console.log("AuthContext: Raw data fetched from API:", fetchedUsers);
+        // ==========================================================
+        
+        if (!fetchedUsers || fetchedUsers.length === 0) {
+          console.error("AuthContext: No users were fetched from the API. The array is empty or undefined.");
+        }
+        
         setUsers(fetchedUsers);
 
         const storedCurrentUser = localStorage.getItem('rmgd_admin_user');
@@ -65,24 +71,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(JSON.parse(storedCurrentUser));
         }
       } catch (error) {
-        console.error("Failed to fetch users:", error);
+        // ==================== DIAGNOSTIC LOG 2 ====================
+        console.error("AuthContext: An error occurred while fetching users.", error);
+        // ==========================================================
       } finally {
         setLoading(false);
+        console.log("AuthContext: Initialization finished.");
       }
     };
     initializeAuth();
   }, []);
 
-  // ==================== UPDATED LOGIN FUNCTION ====================
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Step 1: Find the user by email from the list fetched from the API.
-    const foundUser = users.find(u => u.email === email);
+    // ==================== DIAGNOSTIC LOG 3 ====================
+    console.log(`AuthContext: Attempting login for email: "${email}" with password: "${password}"`);
+    console.log("AuthContext: Current state of users array:", users);
+    // ==========================================================
 
-    // Step 2: Check the password against our temporary password dictionary.
+    const foundUser = users.find(u => u.email === email);
+    
+    // ==================== DIAGNOSTIC LOG 4 ====================
+    if (foundUser) {
+      console.log("AuthContext: User found in state:", foundUser);
+    } else {
+      console.error("AuthContext: User NOT found in state for email:", email);
+    }
+    // ==========================================================
+
     const expectedPassword = tempPasswords[email];
 
     if (foundUser && expectedPassword === password) {
-      // If both user exists and password is correct, login is successful.
+      console.log("AuthContext: Login successful! Password matches.");
       const updatedUser = { ...foundUser, lastLogin: new Date().toISOString() };
       setUser(updatedUser);
       
@@ -92,10 +111,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return true;
     }
     
-    // If user is not found or password does not match, login fails.
+    console.error("AuthContext: Login failed. User not found or password incorrect.");
     return false;
   };
-  // =============================================================
 
   const logout = () => {
     setUser(null);
@@ -104,25 +122,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // --- User management functions (to be implemented later) ---
+  // --- Placeholder User management functions ---
   const addUser = async (userData: Omit<User, 'id' | 'createdAt'>): Promise<boolean> => {
-    console.warn("Add User functionality is not yet connected to a backend POST endpoint.");
+    console.warn("Add User functionality requires a backend POST endpoint.");
     return false;
   };
-
   const deleteUser = async (userId: string): Promise<boolean> => {
-    console.warn("Delete User functionality is not yet connected to a backend DELETE endpoint.");
+    console.warn("Delete User functionality requires a backend DELETE endpoint.");
     return false;
   };
-
   const updateUser = async (userId: string, userData: Partial<User>): Promise<boolean> => {
-    console.warn("Update User functionality is not yet connected to a backend PUT endpoint.");
+    console.warn("Update User functionality requires a backend PUT endpoint.");
     return false;
   };
-  
-  const getAllUsers = (): User[] => {
-    return users;
-  };
+  const getAllUsers = (): User[] => users;
 
   const value: AuthContextType = {
     user,
