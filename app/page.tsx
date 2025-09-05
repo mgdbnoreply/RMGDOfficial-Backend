@@ -9,8 +9,9 @@ import ConsoleCollection from '@/components/ConsoleCollection';
 import UserManagement from '@/components/UserManagement';
 import GamesTab from '@/components/GamesTab';
 import AnalyticsTab from '@/components/AnalyticsTab';
-import UserDashboard from '@/components/UserDashboard'; // New component for users
-import AdminApprovalQueue from '@/components/AdminApprovalQueue'; // New component for admins
+import UserDashboard from '@/components/UserDashboard';
+import AdminApprovalQueue from '@/components/AdminApprovalQueue';
+import AdminTab from '@/components/AdminTab';
 
 // Collection interface for top-level state management
 interface Collection {
