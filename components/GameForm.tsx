@@ -16,19 +16,12 @@ export default function GameForm({ onSubmit, onCancel, loading }: GameFormProps)
     YearDeveloped: '',
     Genre: '',
     Photos: [],
-    Videos: [],
     Connectivity: '',
-    ControlMechanisms: '',
     DeveloperLocation: '',
-    DeviceType: '',
     GameWebsite: '',
     HardwareFeatures: '',
-    MobilityType: '',
-    MonetizationModel: '',
-    OpenSource: '',
     Players: '',
     Purpose: '',
-    SiteSpecific: '',
   });
 
   const handleSubmit = async () => {

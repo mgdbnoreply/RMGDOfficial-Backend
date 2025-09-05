@@ -123,13 +123,13 @@ export type CollectionSearchQuery = {
 /**
  * Available fields for sorting collections
  */
-export type CollectionSortField = 
-  | 'name' 
+export type CollectionSortField =
+  | 'name'
   | 'category'
-  | 'maker' 
-  | 'year' 
+  | 'maker'
+  | 'year'
   | 'productId'
-  | 'createdAt' 
+  | 'createdAt'
   | 'updatedAt';
 
 /**
@@ -222,17 +222,17 @@ export type EnhancedDashboardStats = {
   developers: number;
   genres: number;
   recentGames: number;
-  
+
   // Collections
   totalCollections: number;
   categories: number;
   makers: number;
   vintageItems: number;
-  
+
   // Users
   totalUsers?: number;
   activeUsers?: number;
-  
+
   // System
   storageUsed?: number;
   lastBackup?: string;
@@ -253,7 +253,7 @@ export type AnalyticsData = {
     goldenAge: number; // 1990-1999
     modernEra: number; // 2000-2008
   };
-  
+
   // Collections analytics
   collectionsOverTime?: TimeSeriesData[];
   categoryDistribution?: CategoryData[];
@@ -413,7 +413,7 @@ export function collectionToDisplay(item: CollectionDynamoDB): Collection {
  */
 export function newCollectionToDynamo(newCollection: NewCollection): CollectionDynamoDB {
   const productId = `${newCollection.maker.toLowerCase().replace(/\s+/g, '-')}-${newCollection.name.toLowerCase().replace(/\s+/g, '-')}`;
-  
+
   return {
     productId: { S: productId },
     category: { S: newCollection.category },
@@ -500,7 +500,7 @@ export function isUser(value: unknown): value is User {
  */
 export const GAME_GENRES = [
   'Action',
-  'Adventure', 
+  'Adventure',
   'Puzzle',
   'Strategy',
   'Sports',
@@ -590,12 +590,12 @@ export type OmitFields<T, K extends keyof T> = Omit<T, K>;
  * Convert DynamoDB format to display format
  */
 export type DynamoToDisplay<T> = {
-  [K in keyof T]: T[K] extends { S: string } 
-    ? string 
-    : T[K] extends { N: string } 
-    ? number 
-    : T[K] extends { SS: string[] } 
-    ? string[] 
+  [K in keyof T]: T[K] extends { S: string }
+    ? string
+    : T[K] extends { N: string }
+    ? number
+    : T[K] extends { SS: string[] }
+    ? string[]
     : T[K];
 };
 
