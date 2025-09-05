@@ -33,31 +33,28 @@ const convertToDynamoDBFormat = (gameData: any) => {
  * @param {any} item - The item from DynamoDB with keys like { "S": "value" }.
  * @returns {any} A clean JavaScript object.
  */
-const unmarshall = (item: any) => {
-  if (!item) return {};
-  const obj: { [key: string]: any } = {};
-  
-  // First, extract all values from the DynamoDB format
-  for (const key in item) {
-    const valueObject = item[key];
-    if (valueObject) {
-      const type = Object.keys(valueObject)[0];
-      obj[key] = valueObject[type];
+const unmarshallUser = (item: any) => {
+    if (!item) return null;
+    const userObject: { [key: string]: any } = {};
+    for (const key in item) {
+        const valueObject = item[key];
+        if (valueObject) {
+            const type = Object.keys(valueObject)[0]; // 'S', 'N', etc.
+            userObject[key] = valueObject[type];
+        }
     }
-  }
 
-  // Next, map the capitalized keys from the DB to the lowercase keys the app uses.
-  const mappedObj: { [key: string]: any } = {};
-  if (obj.UserID) mappedObj.id = obj.UserID;
-  if (obj.Email) mappedObj.email = obj.Email; // Correctly maps "Email" to "email"
-  if (obj.Name) mappedObj.name = obj.Name;
-  if (obj.Role) mappedObj.role = obj.Role;
-  if (obj.createdAt) mappedObj.createdAt = obj.createdAt;
-  if (obj.lastLogin) mappedObj.lastLogin = obj.lastLogin;
-
-
-  return mappedObj;
+    // Map PascalCase keys from DB to camelCase keys for the frontend
+    return {
+        id: userObject.UserID,
+        email: userObject.Email,
+        name: userObject.Name,
+        password: userObject.Password, // Include the password for the login check
+        role: userObject.Role,
+        createdAt: userObject.CreatedAt || new Date().toISOString()
+    };
 };
+
 
 // ===== EXISTING GAME API (UNCHANGED) =====
 export const GameAPI = {
@@ -295,26 +292,16 @@ export const CollectionsAPI = {
 
 // ===== USER API (FINAL VERSION) =====
 export const UserAPI = {
-  login: async (email: string, password: string): Promise<any | null> => {
-    try {
-      const res = await fetch(`${API_BASE}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!res.ok) return null;
-      return await res.json();
-    } catch (error) {
-      console.error('Error in login API call:', error);
-      return null;
-    }
-  },
+  // REMOVED the login function as there is no /login endpoint.
 
   getAllUsers: async (): Promise<any[]> => {
     try {
       const res = await fetch(`${API_BASE}/user`);
-      if (!res.ok) throw new Error('Failed to fetch users');
-      return await res.json();
+      if (!res.ok) throw new Error('Failed to fetch users from API');
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : [data];
+      // Use the corrected helper to clean the user data
+      return items.map(unmarshallUser).filter(Boolean);
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -361,6 +348,8 @@ export const UserAPI = {
     }
   }
 };
+
+
 
 
 // ===== DASHBOARD API (UNCHANGED) =====
