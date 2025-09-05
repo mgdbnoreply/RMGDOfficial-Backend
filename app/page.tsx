@@ -37,7 +37,7 @@ function DashboardContent() {
   useEffect(() => {
     if (isAuthenticated) {
         // Set default tab based on role and fetch data accordingly
-        if (user?.role === 'user') {
+        if (user?.Role === 'user') {
             setActiveTab('user-dashboard');
             // User-specific data would be fetched here
         } else { // Admin and Researcher
@@ -101,7 +101,7 @@ function DashboardContent() {
 
   // Get tab title and description
   const getTabInfo = () => {
-    if (user?.role === 'user') {
+    if (user?.Role === 'user') {
         return {
             title: 'Contributor Dashboard',
             description: 'Submit new games and track your contributions to the RMGD project.'
@@ -183,9 +183,9 @@ function DashboardContent() {
         <main className="p-8 bg-gray-50 min-h-screen">
           <div className="max-w-full">
             {/* ROLE-BASED RENDERING */}
-            {user?.role === 'user' && <UserDashboard />}
+            {user?.Role === 'user' && <UserDashboard />}
 
-            {(user?.role === 'admin' || user?.role === 'researcher') && (
+            {(user?.Role === 'admin' || user?.Role === 'researcher') && (
               <>
                 {activeTab === 'games' && (
                   <GamesTab
@@ -202,7 +202,7 @@ function DashboardContent() {
               </>
             )}
 
-            {user?.role === 'admin' && (
+            {user?.Role === 'admin' && (
                 <>
                     {activeTab === 'admin' && <AdminTab />}
                     {activeTab === 'users' && <UserManagement />}
@@ -223,3 +223,4 @@ export default function RMGDDashboard() {
     </AuthProvider>
   );
 }
+
