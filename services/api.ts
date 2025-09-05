@@ -293,25 +293,35 @@ export const CollectionsAPI = {
   }
 };
 
-// ===== USER API (UPDATED) =====
-// In RMGDOfficial-Backend/services/api.ts, replace the entire UserAPI object
-
-// ===== USER API (UPDATED) =====
+// ===== USER API (FINAL VERSION) =====
 export const UserAPI = {
+  login: async (email: string, password: string): Promise<any | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (error) {
+      console.error('Error in login API call:', error);
+      return null;
+    }
+  },
+
   getAllUsers: async (): Promise<any[]> => {
     try {
       const res = await fetch(`${API_BASE}/user`);
       if (!res.ok) throw new Error('Failed to fetch users');
-      const data = await res.json();
-      // The Lambda now returns unmarshalled data directly
-      return Array.isArray(data) ? data : [data];
+      return await res.json();
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
     }
   },
 
-  createUser: async (userData: { name: string; email: string; role: string }): Promise<any | null> => {
+  createUser: async (userData: { Name: string; Email: string; Role: string }): Promise<any | null> => {
     try {
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
@@ -325,7 +335,7 @@ export const UserAPI = {
     }
   },
 
-  updateUser: async (userId: string, userData: { name?: string; role?: string; password?: string }): Promise<boolean> => {
+  updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'PUT',
@@ -351,6 +361,7 @@ export const UserAPI = {
     }
   }
 };
+
 
 // ===== DASHBOARD API (UNCHANGED) =====
 export const DashboardAPI = {
