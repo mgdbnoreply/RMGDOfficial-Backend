@@ -284,6 +284,31 @@ export const DashboardAPI = {
 
 // ===== NEW USER API =====
 export const UserAPI = {
+
+  // In RMGDOfficial-Backend/services/api.ts, add this function inside the UserAPI object
+
+  login: async (email: string, password: string): Promise<any | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!res.ok) {
+        // The API returned an error (e.g., 401 Unauthorized for bad password)
+        return null;
+      }
+      
+      // Assuming the API returns the user object on successful login
+      return await res.json(); 
+    } catch (error) {
+      console.error('Error during login API call:', error);
+      return null;
+    }
+  },
   getAllUsers: async (): Promise<any[]> => {
     try {
       const res = await fetch(`${API_BASE}/user`);
