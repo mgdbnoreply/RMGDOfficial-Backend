@@ -9,26 +9,26 @@ interface AddGameModalProps {
 }
 
 export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameModalProps) {
-  const [formData, setFormData] = useState<NewGame & { [key: string]: any }>({
+  const [formData, setFormData] = useState<NewGame>({
     GameTitle: '',
     GameDescription: '',
     Developer: '',
     YearDeveloped: '',
     Genre: '',
     Photos: [],
-    Connectivity: 'N/A',
-    ControlMechanisms: 'Unknown',
-    DeveloperLocation: 'Unknown',
-    DeviceType: 'Unknown',
-    GameWebsite: 'N/A',
-    HardwareFeatures: 'Unknown',
-    MobilityType: 'Unknown',
-    MonetizationModel: 'Unknown',
-    OpenSource: 'N',
-    Players: 'Unknown',
-    Purpose: 'Entertainment',
-    SiteSpecific: 'Unknown',
-    Videos: []
+    Videos: [],
+    Connectivity: '',
+    ControlMechanisms: '',
+    DeveloperLocation: '',
+    DeviceType: '',
+    GameWebsite: '',
+    HardwareFeatures: '',
+    MobilityType: '',
+    MonetizationModel: '',
+    OpenSource: '',
+    Players: '',
+    Purpose: '',
+    SiteSpecific: '',
   });
 
   const [photoInput, setPhotoInput] = useState('');
@@ -41,18 +41,10 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
       return;
     }
     setValidationError('');
-    
-    // Filter out empty strings from Photos and Videos
-    const finalData = {
-        ...formData,
-        Photos: formData.Photos.filter((p: string) => p.trim() !== ''),
-        Videos: formData.Videos.filter((v: string) => v.trim() !== '')
-    };
-
-    await onSubmit(finalData);
+    await onSubmit(formData);
   };
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
+  const handleInputChange = (field: keyof NewGame, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (validationError) {
       setValidationError('');
@@ -61,37 +53,26 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
 
   const addPhoto = () => {
     if (photoInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        Photos: [...prev.Photos, photoInput.trim()]
-      }));
+      handleInputChange('Photos', [...formData.Photos, photoInput.trim()]);
       setPhotoInput('');
     }
   };
 
   const removePhoto = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      Photos: prev.Photos.filter((_: any, i: number) => i !== index)
-    }));
+    handleInputChange('Photos', formData.Photos.filter((_, i) => i !== index));
   };
-
-    const addVideo = () => {
+  
+  const addVideo = () => {
     if (videoInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        Videos: [...prev.Videos, videoInput.trim()]
-      }));
+      handleInputChange('Videos', [...formData.Videos, videoInput.trim()]);
       setVideoInput('');
     }
   };
 
   const removeVideo = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      Videos: prev.Videos.filter((_: any, i: number) => i !== index)
-    }));
+    handleInputChange('Videos', formData.Videos.filter((_, i) => i !== index));
   };
+
 
   const commonGenres = [
     'Action', 'Adventure', 'Puzzle', 'Strategy', 'Sports', 'Racing',
@@ -120,132 +101,132 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
         <div className="p-6 space-y-6">
           {/* Basic Information */}
           <div className="academic-card p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <div className="w-2 h-6 bg-red-600 rounded mr-3"></div>
-              Basic Information
-            </h4>
-            
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                    <label className="block text-gray-700 text-base font-medium mb-2">Game Title <span className="text-red-500">*</span></label>
-                    <input type="text" value={formData.GameTitle} onChange={(e) => handleInputChange('GameTitle', e.target.value)} className="academic-input w-full" required />
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Game Title <span className="text-red-500">*</span></label>
+                    <input type="text" value={formData.GameTitle} onChange={(e) => handleInputChange('GameTitle', e.target.value)} className="academic-input w-full" placeholder="e.g., Snake" required />
                 </div>
                 <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Developer <span className="text-red-500">*</span></label>
-                    <input type="text" value={formData.Developer} onChange={(e) => handleInputChange('Developer', e.target.value)} className="academic-input w-full" required />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Developer <span className="text-red-500">*</span></label>
+                    <input type="text" value={formData.Developer} onChange={(e) => handleInputChange('Developer', e.target.value)} className="academic-input w-full" placeholder="e.g., Nokia" required />
                 </div>
                 <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Year Developed</label>
-                    <input type="number" min="1975" max="2008" value={formData.YearDeveloped} onChange={(e) => handleInputChange('YearDeveloped', e.target.value)} className="academic-input w-full" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Year Developed</label>
+                    <input type="number" value={formData.YearDeveloped} onChange={(e) => handleInputChange('YearDeveloped', e.target.value)} className="academic-input w-full" placeholder="e.g., 1997" />
                 </div>
                 <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Genre</label>
-                    <select value={formData.Genre} onChange={(e) => handleInputChange('Genre', e.target.value)} className="academic-input w-full">
-                        <option value="">Select a genre</option>
-                        {commonGenres.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Genre</label>
+                    <input type="text" value={formData.Genre} onChange={(e) => handleInputChange('Genre', e.target.value)} className="academic-input w-full" placeholder="e.g., Puzzle" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Developer Location</label>
+                    <input type="text" value={formData.DeveloperLocation} onChange={(e) => handleInputChange('DeveloperLocation', e.target.value)} className="academic-input w-full" placeholder="e.g., Finland" />
                 </div>
                  <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Developer Location</label>
-                    <input type="text" value={formData.DeveloperLocation} onChange={(e) => handleInputChange('DeveloperLocation', e.target.value)} className="academic-input w-full" />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Game Website</label>
+                    <input type="url" value={formData.GameWebsite} onChange={(e) => handleInputChange('GameWebsite', e.target.value)} className="academic-input w-full" placeholder="https://example.com" />
                 </div>
             </div>
           </div>
-
-          {/* Detailed Information */}
+          
+          {/* Gameplay Details */}
           <div className="academic-card p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <div className="w-2 h-6 bg-blue-600 rounded mr-3"></div>
-              Detailed Information
-            </h4>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Purpose</label>
-                    <input type="text" value={formData.Purpose} onChange={(e) => handleInputChange('Purpose', e.target.value)} className="academic-input w-full" />
-                </div>
-                 <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Hardware Features</label>
-                    <input type="text" value={formData.HardwareFeatures} onChange={(e) => handleInputChange('HardwareFeatures', e.target.value)} className="academic-input w-full" />
-                </div>
-                 <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Connectivity</label>
-                    <input type="text" value={formData.Connectivity} onChange={(e) => handleInputChange('Connectivity', e.target.value)} className="academic-input w-full" />
-                </div>
-                 <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Players</label>
-                    <input type="text" value={formData.Players} onChange={(e) => handleInputChange('Players', e.target.value)} className="academic-input w-full" />
-                </div>
-             </div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Gameplay Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Players</label>
+                      <input type="text" value={formData.Players} onChange={(e) => handleInputChange('Players', e.target.value)} className="academic-input w-full" placeholder="e.g., Single-player" />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Control Mechanisms</label>
+                      <input type="text" value={formData.ControlMechanisms} onChange={(e) => handleInputChange('ControlMechanisms', e.target.value)} className="academic-input w-full" placeholder="e.g., Keypad" />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+                      <input type="text" value={formData.Purpose} onChange={(e) => handleInputChange('Purpose', e.target.value)} className="academic-input w-full" placeholder="e.g., Entertainment" />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Monetization Model</label>
+                      <input type="text" value={formData.MonetizationModel} onChange={(e) => handleInputChange('MonetizationModel', e.target.value)} className="academic-input w-full" placeholder="e.g., Pre-installed" />
+                  </div>
+              </div>
+          </div>
+
+          {/* Technical Details */}
+          <div className="academic-card p-6">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">Technical Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Device Type</label>
+                      <input type="text" value={formData.DeviceType} onChange={(e) => handleInputChange('DeviceType', e.target.value)} className="academic-input w-full" placeholder="e.g., Mobile Phone" />
+                  </div>
+                   <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Hardware Features</label>
+                      <input type="text" value={formData.HardwareFeatures} onChange={(e) => handleInputChange('HardwareFeatures', e.target.value)} className="academic-input w-full" placeholder="e.g., Monochrome display" />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Connectivity</label>
+                      <input type="text" value={formData.Connectivity} onChange={(e) => handleInputChange('Connectivity', e.target.value)} className="academic-input w-full" placeholder="e.g., N/A" />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Mobility Type</label>
+                      <input type="text" value={formData.MobilityType} onChange={(e) => handleInputChange('MobilityType', e.target.value)} className="academic-input w-full" placeholder="e.g., Portable" />
+                  </div>
+                   <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Open Source</label>
+                      <input type="text" value={formData.OpenSource} onChange={(e) => handleInputChange('OpenSource', e.target.value)} className="academic-input w-full" placeholder="e.g., N" />
+                  </div>
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Site Specific</label>
+                      <input type="text" value={formData.SiteSpecific} onChange={(e) => handleInputChange('SiteSpecific', e.target.value)} className="academic-input w-full" placeholder="e.g., Not site-specific" />
+                  </div>
+              </div>
           </div>
 
           {/* Description */}
           <div className="academic-card p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <div className="w-2 h-6 bg-purple-600 rounded mr-3"></div>
-              Game Description
-            </h4>
-            <textarea
-              value={formData.GameDescription}
-              onChange={(e) => handleInputChange('GameDescription', e.target.value)}
-              rows={4}
-              className="academic-input w-full"
-              placeholder="Detailed description of the game..."
-            />
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">Game Description</h4>
+            <textarea value={formData.GameDescription} onChange={(e) => handleInputChange('GameDescription', e.target.value)} rows={4} className="academic-input w-full" />
           </div>
 
           {/* Media */}
           <div className="academic-card p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <div className="w-2 h-6 bg-green-600 rounded mr-3"></div>
-                Visual Documentation
-            </h4>
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Photo URLs</label>
-                    <div className="flex gap-2">
-                        <input type="url" value={photoInput} onChange={(e) => setPhotoInput(e.target.value)} className="academic-input flex-1" placeholder="Enter image URL"/>
-                        <button type="button" onClick={addPhoto} disabled={!photoInput.trim()} className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50">
-                            <Plus className="w-4 h-4" /><span>Add</span>
-                        </button>
-                    </div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">Media Assets</h4>
+            {/* Photos */}
+            <div className="space-y-2 mb-4">
+                <label className="block text-sm font-medium text-gray-700">Photos</label>
+                <div className="flex gap-2">
+                    <input type="url" value={photoInput} onChange={e => setPhotoInput(e.target.value)} placeholder="Add photo URL" className="academic-input flex-1"/>
+                    <button onClick={addPhoto} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Plus size={16}/></button>
                 </div>
-                {formData.Photos.length > 0 && (
-                    <div className="space-y-2">
-                        <div className="grid grid-cols-1 gap-2">
-                            {formData.Photos.map((url: string, index: number) => (
-                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <span className="text-sm text-gray-700 truncate flex-1 mr-3">{url}</span>
-                                    <button type="button" onClick={() => removePhoto(index)} className="text-red-600 hover:text-red-800 p-1"><X className="w-4 h-4" /></button>
-                                </div>
-                            ))}
+                <div className="space-y-1">
+                    {formData.Photos.map((url, index) => (
+                        <div key={index} className="flex items-center bg-gray-50 p-2 rounded">
+                            <span className="text-xs truncate flex-1">{url}</span>
+                            <button onClick={() => removePhoto(index)} className="ml-2 text-red-500 hover:text-red-700"><X size={14}/></button>
                         </div>
-                    </div>
-                )}
+                    ))}
+                </div>
             </div>
-             <div className="space-y-4 mt-4">
-                <div>
-                    <label className="block text-gray-700 text-base font-medium mb-2">Video URLs</label>
-                    <div className="flex gap-2">
-                        <input type="url" value={videoInput} onChange={(e) => setVideoInput(e.target.value)} className="academic-input flex-1" placeholder="Enter video URL"/>
-                        <button type="button" onClick={addVideo} disabled={!videoInput.trim()} className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50">
-                            <Plus className="w-4 h-4" /><span>Add</span>
-                        </button>
-                    </div>
+            {/* Videos */}
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Videos</label>
+                <div className="flex gap-2">
+                    <input type="url" value={videoInput} onChange={e => setVideoInput(e.target.value)} placeholder="Add video URL" className="academic-input flex-1"/>
+                    <button onClick={addVideo} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Plus size={16}/></button>
                 </div>
-                {formData.Videos.length > 0 && (
-                    <div className="space-y-2">
-                        <div className="grid grid-cols-1 gap-2">
-                            {formData.Videos.map((url: string, index: number) => (
-                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                    <span className="text-sm text-gray-700 truncate flex-1 mr-3">{url}</span>
-                                    <button type="button" onClick={() => removeVideo(index)} className="text-red-600 hover:text-red-800 p-1"><X className="w-4 h-4" /></button>
-                                </div>
-                            ))}
+                 <div className="space-y-1">
+                    {formData.Videos.map((url, index) => (
+                        <div key={index} className="flex items-center bg-gray-50 p-2 rounded">
+                            <span className="text-xs truncate flex-1">{url}</span>
+                            <button onClick={() => removeVideo(index)} className="ml-2 text-red-500 hover:text-red-700"><X size={14}/></button>
                         </div>
-                    </div>
-                )}
+                    ))}
+                </div>
             </div>
           </div>
+
         </div>
 
         {/* Footer */}
@@ -256,8 +237,17 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
             </div>
           )}
           <div className="flex justify-end space-x-4">
-            <button onClick={onCancel} className="px-6 py-3 text-gray-700 hover:text-gray-900 transition-colors font-medium">Cancel</button>
-            <button onClick={handleSubmit} disabled={loading || !formData.GameTitle.trim() || !formData.Developer.trim()} className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium disabled:opacity-50">
+            <button
+              onClick={onCancel}
+              className="px-6 py-3 text-gray-700 hover:text-gray-900 transition-colors text-base font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !formData.GameTitle.trim() || !formData.Developer.trim()}
+              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-base"
+            >
               <Save className="w-5 h-5" />
               <span>{loading ? 'Adding Game...' : 'Add to Collection'}</span>
             </button>
