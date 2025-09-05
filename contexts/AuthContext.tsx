@@ -39,12 +39,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// ==================== CORRECTED PASSWORD LIST ====================
-// This now includes the correct credentials for your user.
-const tempPasswords: Record<string, string> = {
-  'parkar.ar@northeastern.edu': 'ib2026ib'
-};
-// =================================================================
+
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
