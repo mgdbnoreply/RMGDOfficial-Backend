@@ -3,9 +3,6 @@ import { useState } from 'react';
 import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Note: The 'User' type is now defined in AuthContext.tsx
-// We can remove the local interface if it exists.
-
 export default function UserManagement() {
   const { users, user: currentUser, addUser, deleteUser, updateUser } = useAuth();
   const [showAddForm, setShowAddForm] = useState(false);
@@ -16,13 +13,12 @@ export default function UserManagement() {
     Role: 'user'
   });
 
-  const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'researcher');
-  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'researcher');
+  const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'Admin' || u.role === 'researcher');
+  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'Admin' && u.role !== 'researcher');
 
   const handleAddUser = async () => {
     if (!newUser.Email.trim() || !newUser.Name.trim()) return;
     
-    // Pass capitalized keys to match the backend Lambda
     const success = await addUser({
       Email: newUser.Email,
       Name: newUser.Name,
@@ -47,7 +43,6 @@ export default function UserManagement() {
   };
 
   const handleUpdateUser = async (userId: string, field: string, value: string) => {
-    // Capitalize the first letter of the field to match backend keys (Name, Role)
     const backendField = field.charAt(0).toUpperCase() + field.slice(1);
     await updateUser(userId, { [backendField]: value });
     setEditingUser(null);
@@ -61,9 +56,9 @@ export default function UserManagement() {
   };
 
   const getRoleColor = (role: string) => {
-    switch (role) {
+    const roleLower = role.toLowerCase();
+    switch (roleLower) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200';
-      case 'Admin': return 'bg-red-100 text-red-800 border-red-200';
       case 'researcher': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'user': return 'bg-green-100 text-green-800 border-green-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -141,7 +136,7 @@ export default function UserManagement() {
                                         className="academic-input w-full text-base"
                                         disabled={u.email === 'admin@rmgd.org'}
                                     >
-                                        <option value="admin">Administrator</option>
+                                        <option value="Admin">Administrator</option>
                                         <option value="researcher">Researcher</option>
                                         <option value="user">User</option>
                                     </select>
@@ -237,8 +232,8 @@ export default function UserManagement() {
               <label className="block text-gray-700 text-base font-medium mb-3">Full Name</label>
               <input
                 type="text"
-                value={newUser.name}
-                onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                value={newUser.Name}
+                onChange={(e) => setNewUser({...newUser, Name: e.target.value})}
                 className="academic-input w-full text-base"
                 placeholder="Enter full name"
               />
@@ -248,8 +243,8 @@ export default function UserManagement() {
               <label className="block text-gray-700 text-base font-medium mb-3">Email Address</label>
               <input
                 type="email"
-                value={newUser.email}
-                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                value={newUser.Email}
+                onChange={(e) => setNewUser({...newUser, Email: e.target.value})}
                 className="academic-input w-full text-base"
                 placeholder="user@rmgd.org"
               />
@@ -258,13 +253,13 @@ export default function UserManagement() {
             <div>
               <label className="block text-gray-700 text-base font-medium mb-3">Role</label>
               <select
-                value={newUser.role}
-                onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                value={newUser.Role}
+                onChange={(e) => setNewUser({...newUser, Role: e.target.value})}
                 className="academic-input w-full text-base"
               >
                 <option value="user">User (External)</option>
                 <option value="researcher">Researcher (Internal)</option>
-                <option value="admin">Administrator (Internal)</option>
+                <option value="Admin">Administrator (Internal)</option>
               </select>
             </div>
           </div>
@@ -278,18 +273,12 @@ export default function UserManagement() {
             </button>
             <button
               onClick={handleAddUser}
-              disabled={!newUser.name.trim() || !newUser.email.trim()}
+              disabled={!newUser.Name.trim() || !newUser.Email.trim()}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               <Save className="w-5 h-5" />
               <span>Add User</span>
             </button>
-          </div>
-          
-          <div className="mt-6 p-6 bg-amber-50 border border-amber-200 rounded-xl">
-            <p className="text-amber-800 text-base font-medium mb-2">Default Password</p>
-            <p className="text-amber-700 text-base">New users will have a default password set by the API.</p>
-            <p className="text-amber-600 text-sm mt-2">Users should change this password after first login.</p>
           </div>
         </div>
       )}
@@ -300,3 +289,4 @@ export default function UserManagement() {
     </div>
   );
 }
+
