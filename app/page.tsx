@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Game } from '@/types';
-import { GameAPI, CollectionsAPI } from '@/services/api';
+import { GameAPI } from '@/services/api';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Login from '@/components/Login';
 import Sidebar from '@/components/Sidebar';
@@ -9,7 +9,6 @@ import ConsoleCollection from '@/components/ConsoleCollection';
 import UserManagement from '@/components/UserManagement';
 import GamesTab from '@/components/GamesTab';
 import AnalyticsTab from '@/components/AnalyticsTab';
-import AdminTab from '@/components/AdminTab';
 import UserDashboard from '@/components/UserDashboard'; // New component for users
 import AdminApprovalQueue from '@/components/AdminApprovalQueue'; // New component for admins
 
@@ -31,23 +30,19 @@ interface Collection {
 function DashboardContent() {
   const [activeTab, setActiveTab] = useState('games');
   const [games, setGames] = useState<Game[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(false);
-  const [collectionsLoading, setCollectionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [collectionsError, setCollectionsError] = useState<string | null>(null);
   const { user, isAuthenticated, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
         // Set default tab based on role and fetch data accordingly
         if (user?.role === 'user') {
-            setActiveTab('user_dashboard');
+            setActiveTab('user-dashboard');
             // User-specific data would be fetched here
         } else { // Admin and Researcher
             setActiveTab('games');
             fetchAllGames();
-            fetchAllCollections();
         }
     }
   }, [isAuthenticated, user]);
@@ -64,44 +59,6 @@ function DashboardContent() {
       setGames([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Helper function to convert raw collection data to display format
-  const convertToDisplay = (item: any): Collection => {
-    const extractString = (value: any): string => {
-      if (typeof value === 'object' && value !== null && value.S) {
-          return String(value.S);
-      }
-      return String(value || '');
-    };
-
-    return {
-        id: extractString(item.id || item.ProductID),
-        name: extractString(item.name),
-        category: extractString(item.category),
-        description: extractString(item.description),
-        maker: extractString(item.maker),
-        year: extractString(item.year),
-        image: extractString(item.image),
-        productId: extractString(item.ProductID || item.id),
-        status: 'active',
-    };
-  };
-
-  const fetchAllCollections = async () => {
-    setCollectionsLoading(true);
-    setCollectionsError(null);
-    
-    try {
-      const rawData = await CollectionsAPI.getAllCollections();
-      const convertedData = rawData.map((item: any) => convertToDisplay(item));
-      setCollections(convertedData);
-    } catch (err: any) {
-      setCollectionsError(`Failed to load collections: ${err.message}`);
-      setCollections([]);
-    } finally {
-      setCollectionsLoading(false);
     }
   };
 
@@ -122,27 +79,6 @@ function DashboardContent() {
   // Optimized delete function - removes game from local state  
   const handleDeleteGame = (gameId: string) => {
     setGames(currentGames => currentGames.filter(game => game.GameID.S !== gameId));
-  };
-
-  // Optimized collection functions - similar to games
-  const handleUpdateCollection = (updatedCollection: Collection) => {
-    setCollections(currentCollections => 
-      currentCollections.map(collection => 
-        collection.id === updatedCollection.id ? updatedCollection : collection
-      )
-    );
-  };
-
-  const handleAddCollection = (newCollection: Collection) => {
-    setCollections(currentCollections => [...currentCollections, newCollection]);
-  };
-
-  const handleDeleteCollection = (collectionId: string) => {
-    setCollections(currentCollections => 
-      currentCollections.filter(collection => 
-        collection.id !== collectionId && collection.productId !== collectionId
-      )
-    );
   };
 
   // Show loading spinner during auth check
@@ -177,11 +113,6 @@ function DashboardContent() {
         return {
           title: 'Game Collection Database',
           description: 'Comprehensive catalog of retro mobile games (1975-2008)'
-        };
-      case 'console':
-        return {
-          title: 'Console & Device Collection',
-          description: 'Physical gaming device preservation'
         };
       case 'analytics':
         return {
@@ -267,18 +198,6 @@ function DashboardContent() {
                     onDeleteGame={handleDeleteGame}
                   />
                 )}
-                {activeTab === 'console' && (
-                   <ConsoleCollection 
-                    collections={collections}
-                    loading={collectionsLoading}
-                    error={collectionsError}
-                    onRefresh={fetchAllCollections}
-                    onUpdateCollection={handleUpdateCollection}
-                    onAddCollection={handleAddCollection}
-                    onDeleteCollection={handleDeleteCollection}
-                    convertToDisplay={convertToDisplay}
-                  />
-                )}
                 {activeTab === 'analytics' && <AnalyticsTab />}
               </>
             )}
@@ -304,4 +223,3 @@ export default function RMGDDashboard() {
     </AuthProvider>
   );
 }
-

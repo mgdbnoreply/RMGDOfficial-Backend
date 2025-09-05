@@ -15,7 +15,7 @@ import {
   Activity,
   Archive
 } from 'lucide-react';
-import { GameAPI, CollectionsAPI } from '@/services/api'; // Adjust path as needed
+import { GameAPI } from '@/services/api'; // Adjust path as needed
 
 // Type definitions
 interface Game {
@@ -34,27 +34,6 @@ interface Game {
   gameTitle?: string;
   title?: string;
   description?: string;
-}
-
-interface Collection {
-  id?: string | { S?: string };
-  ProductID?: string | { S?: string };
-  name?: string | { S?: string };
-  category?: string | { S?: string };
-  Category?: string | { S?: string };
-  type?: string | { S?: string };
-  Type?: string | { S?: string };
-  description?: string | { S?: string };
-  maker?: string | { S?: string };
-  Maker?: string | { S?: string };
-  creator?: string | { S?: string };
-  Creator?: string | { S?: string };
-  developer?: string | { S?: string };
-  year?: string | { S?: string };
-  image?: string | { S?: string };
-  Image?: string | { S?: string };
-  photo?: string | { S?: string };
-  Photo?: string | { S?: string };
 }
 
 // Simple Pie Chart Component
@@ -207,29 +186,17 @@ const StatsCard = ({ title, value, icon: Icon, color, iconColor, textColor }: {
   </div>
 );
 
-// Remove the interface since we're not accepting props anymore
-// interface ResearchDashboardProps {
-//   games: Game[];
-//   collections?: any[];
-// }
-
 export default function ResearchDashboard() {
   const [activeSection, setActiveSection] = useState('overview');
   const [games, setGames] = useState<Game[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [gamesData, collectionsData] = await Promise.all([
-          GameAPI.getAllGames(),
-          CollectionsAPI.getAllCollections()
-        ]);
-        
+        const gamesData = await GameAPI.getAllGames();
         setGames(Array.isArray(gamesData) ? gamesData : []);
-        setCollections(Array.isArray(collectionsData) ? collectionsData : []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -240,26 +207,6 @@ export default function ResearchDashboard() {
     fetchData();
   }, []);
 
-  // Process collections data safely - handle DynamoDB format
-  const processedCollections = collections.map((item: any) => ({
-    id: (typeof item?.id === 'object' ? item.id?.S : item?.id) || (typeof item?.ProductID === 'object' ? item.ProductID?.S : item?.ProductID) || Math.random().toString(),
-    name: (typeof item?.name === 'object' ? item.name?.S : item?.name) || 'Unknown Device',
-    category: (typeof item?.category === 'object' ? item.category?.S : item?.category) || 
-              (typeof item?.Category === 'object' ? item.Category?.S : item?.Category) || 
-              (typeof item?.type === 'object' ? item.type?.S : item?.type) || 
-              (typeof item?.Type === 'object' ? item.Type?.S : item?.Type) || 'other',
-    description: (typeof item?.description === 'object' ? item.description?.S : item?.description) || 'No description',
-    maker: (typeof item?.maker === 'object' ? item.maker?.S : item?.maker) || 
-           (typeof item?.Maker === 'object' ? item.Maker?.S : item?.Maker) || 
-           (typeof item?.creator === 'object' ? item.creator?.S : item?.creator) || 
-           (typeof item?.Creator === 'object' ? item.Creator?.S : item?.Creator) || 
-           (typeof item?.developer === 'object' ? item.developer?.S : item?.developer) || 'Unknown Maker',
-    year: (typeof item?.year === 'object' ? item.year?.S : item?.year) || '',
-    image: (typeof item?.image === 'object' ? item.image?.S : item?.image) || 
-           (typeof item?.Image === 'object' ? item.Image?.S : item?.Image) || 
-           (typeof item?.photo === 'object' ? item.photo?.S : item?.photo) || 
-           (typeof item?.Photo === 'object' ? item.Photo?.S : item?.Photo) || ''
-  }));
 
   // Data analysis
   const gameGenres = games.reduce((acc: Record<string, number>, game) => {
@@ -268,21 +215,9 @@ export default function ResearchDashboard() {
     return acc;
   }, {});
 
-  const collectionCategories = processedCollections.reduce((acc: Record<string, number>, device) => {
-    const category = device.category || 'Unknown';
-    acc[category] = (acc[category] || 0) + 1;
-    return acc;
-  }, {});
-
   const gameDevelopers = games.reduce((acc: Record<string, number>, game) => {
     const dev = (typeof game.Developer === 'object' ? game.Developer?.S : game.Developer) || game.developer || game.creator || 'Unknown';
     acc[dev] = (acc[dev] || 0) + 1;
-    return acc;
-  }, {});
-
-  const collectionMakers = processedCollections.reduce((acc: Record<string, number>, device) => {
-    const maker = device.maker || 'Unknown';
-    acc[maker] = (acc[maker] || 0) + 1;
     return acc;
   }, {});
 
@@ -296,9 +231,7 @@ export default function ResearchDashboard() {
 
   // Top data
   const topGameGenres = Object.entries(gameGenres).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 8) as [string, number][];
-  const topCollectionCategories = Object.entries(collectionCategories).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 8) as [string, number][];
   const topGameDevelopers = Object.entries(gameDevelopers).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 10) as [string, number][];
-  const topCollectionMakers = Object.entries(collectionMakers).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 10) as [string, number][];
   const topGameYears = Object.entries(gameYears).sort(([,a], [,b]) => (b as number) - (a as number)).slice(0, 10) as [string, number][];
 
   // Best performers
@@ -327,8 +260,6 @@ export default function ResearchDashboard() {
     return photos > bestPhotos ? game : best;
   }, games[0]) : null;
 
-  const bestCollection = processedCollections.find(d => d.image && typeof d.image === 'string' && d.image.trim() !== '') || processedCollections[0];
-
   // Era analysis
   const gameEras = {
     'Early Era (1975-1989)': games.filter(g => {
@@ -345,32 +276,10 @@ export default function ResearchDashboard() {
     }).length
   };
 
-  const collectionEras = {
-    'Early Era (1975-1989)': processedCollections.filter(d => {
-      const year = parseInt(d.year || '0');
-      return year >= 1975 && year <= 1989;
-    }).length,
-    'Golden Age (1990-1999)': processedCollections.filter(d => {
-      const year = parseInt(d.year || '0');
-      return year >= 1990 && year <= 1999;
-    }).length,
-    'Modern Era (2000-2008)': processedCollections.filter(d => {
-      const year = parseInt(d.year || '0');
-      return year >= 2000 && year <= 2008;
-    }).length
-  };
-
-  const combinedEras = {
-    'Early Era (1975-1989)': gameEras['Early Era (1975-1989)'] + collectionEras['Early Era (1975-1989)'],
-    'Golden Age (1990-1999)': gameEras['Golden Age (1990-1999)'] + collectionEras['Golden Age (1990-1999)'],
-    'Modern Era (2000-2008)': gameEras['Modern Era (2000-2008)'] + collectionEras['Modern Era (2000-2008)']
-  };
 
   // Quality metrics
   const stats = {
     totalGames: games.length,
-    totalCollections: processedCollections.length,
-    totalItems: games.length + processedCollections.length,
     documentedGames: games.filter(g => {
       if (g.Photos) {
         // Check if it's the DynamoDB format object with SS property
@@ -389,20 +298,16 @@ export default function ResearchDashboard() {
       }
       return false;
     }).length,
-    documentedCollections: processedCollections.filter(d => d.image && typeof d.image === 'string' && d.image.trim() !== '').length,
     uniqueGenres: Object.keys(gameGenres).length,
-    uniqueCategories: Object.keys(collectionCategories).length,
     uniqueDevelopers: Object.keys(gameDevelopers).length,
-    uniqueMakers: Object.keys(collectionMakers).length
   };
 
-  const overallDocRate = stats.totalItems > 0 ? Math.round(((stats.documentedGames + stats.documentedCollections) / stats.totalItems) * 100) : 0;
+  const overallDocRate = stats.totalGames > 0 ? Math.round(((stats.documentedGames) / stats.totalGames) * 100) : 0;
 
   const sections = [
     { id: 'overview', label: 'Overview', icon: Database },
     { id: 'champions', label: 'Champions', icon: Trophy },
     { id: 'games', label: 'Games', icon: Gamepad2 },
-    { id: 'collections', label: 'Collections', icon: Archive },
     { id: 'quality', label: 'Quality', icon: Star }
   ];
 
@@ -428,11 +333,11 @@ export default function ResearchDashboard() {
             </div>
             <div>
               <h2 className="text-3xl font-bold text-primary mb-2">RMGD Data Analysis</h2>
-              <p className="text-secondary text-lg">Statistical analysis of games and device collections</p>
+              <p className="text-secondary text-lg">Statistical analysis of games</p>
               <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                 <span className="flex items-center space-x-1">
                   <Database className="w-4 h-4" />
-                  <span>{stats.totalItems} Total Items</span>
+                  <span>{stats.totalGames} Total Games</span>
                 </span>
                 <span className="flex items-center space-x-1">
                   <Activity className="w-4 h-4" />
@@ -474,17 +379,17 @@ export default function ResearchDashboard() {
               textColor="text-red-800"
             />
             <StatsCard
-              title="Total Collections"
-              value={stats.totalCollections}
-              icon={Archive}
+              title="Unique Developers"
+              value={stats.uniqueDevelopers}
+              icon={Users}
               color="bg-blue-50 border-blue-200"
               iconColor="bg-blue-600"
               textColor="text-blue-800"
             />
-            <StatsCard
-              title="Combined Items"
-              value={stats.totalItems}
-              icon={Database}
+             <StatsCard
+              title="Unique Genres"
+              value={stats.uniqueGenres}
+              icon={Archive}
               color="bg-green-50 border-green-200"
               iconColor="bg-green-600"
               textColor="text-green-800"
@@ -500,46 +405,16 @@ export default function ResearchDashboard() {
           </div>
 
           <SimplePieChart 
-            data={Object.entries(combinedEras) as [string, number][]} 
-            title="Combined Era Distribution (Games + Collections)" 
+            data={Object.entries(gameEras) as [string, number][]} 
+            title="Game Era Distribution" 
           />
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="academic-card-elevated p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-white" />
-              </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Total Coverage</h4>
-              <p className="text-3xl font-bold text-amber-600 mb-1">34</p>
-              <p className="text-gray-600">years of gaming history</p>
-            </div>
-
-            <div className="academic-card-elevated p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-white" />
-              </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Content Creators</h4>
-              <p className="text-3xl font-bold text-green-600 mb-1">{stats.uniqueDevelopers + stats.uniqueMakers}</p>
-              <p className="text-gray-600">developers + makers</p>
-            </div>
-
-            <div className="academic-card-elevated p-6 text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <PieChart className="w-8 h-8 text-white" />
-              </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Content Variety</h4>
-              <p className="text-3xl font-bold text-blue-600 mb-1">{stats.uniqueGenres + stats.uniqueCategories}</p>
-              <p className="text-gray-600">genres + categories</p>
-            </div>
-          </div>
         </div>
       )}
 
       {/* Champions Section */}
       {activeSection === 'champions' && (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="academic-card-elevated p-8">
+          <div className="academic-card-elevated p-8">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center">
                   <Crown className="w-6 h-6 text-white" />
@@ -599,45 +474,7 @@ export default function ResearchDashboard() {
                 </div>
               </div>
             </div>
-
-            <div className="academic-card-elevated p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
-                  <Medal className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">Featured Collection Item</h3>
-              </div>
-              
-              <div className="text-center">
-                <h4 className="text-2xl font-bold text-blue-600 mb-2">
-                  {bestCollection?.name || 'N/A'}
-                </h4>
-                <p className="text-gray-700 mb-4 line-clamp-2">{bestCollection?.description || 'No description'}</p>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Maker:</span>
-                    <p className="font-semibold">{bestCollection?.maker || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Year:</span>
-                    <p className="font-semibold">{bestCollection?.year || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Category:</span>
-                    <p className="font-semibold capitalize">{bestCollection?.category || 'Unknown'}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Status:</span>
-                    <p className="font-semibold text-blue-600">
-                      {bestCollection?.image ? 'Documented' : 'Basic'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
             <div className="academic-card-elevated p-8">
               <h4 className="text-xl font-bold text-gray-900 mb-6">Games Champions</h4>
               <div className="space-y-3">
@@ -668,38 +505,6 @@ export default function ResearchDashboard() {
                 ))}
               </div>
             </div>
-
-            <div className="academic-card-elevated p-8">
-              <h4 className="text-xl font-bold text-gray-900 mb-6">Collections Champions</h4>
-              <div className="space-y-3">
-                {topCollectionCategories.slice(0, 3).map(([category, count], idx) => (
-                  <div key={category} className={`flex items-center justify-between p-4 rounded-xl ${
-                    idx === 0 ? 'bg-purple-50 border border-purple-200' :
-                    idx === 1 ? 'bg-blue-50 border border-blue-200' :
-                    'bg-green-50 border border-green-200'
-                  }`}>
-                    <div>
-                      <h5 className={`font-semibold capitalize ${
-                        idx === 0 ? 'text-purple-800' :
-                        idx === 1 ? 'text-blue-800' :
-                        'text-green-800'
-                      }`}>{category}</h5>
-                      <p className={`${
-                        idx === 0 ? 'text-purple-700' :
-                        idx === 1 ? 'text-blue-700' :
-                        'text-green-700'
-                      }`}>{count} devices</p>
-                    </div>
-                    <div className={`text-2xl font-bold ${
-                      idx === 0 ? 'text-purple-600' :
-                      idx === 1 ? 'text-blue-600' :
-                      'text-green-600'
-                    }`}>#{idx + 1}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -714,21 +519,9 @@ export default function ResearchDashboard() {
         </div>
       )}
 
-      {/* Collections Analysis */}
-      {activeSection === 'collections' && (
-        <div className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <SimplePieChart data={topCollectionCategories} title="Collection Category Distribution" />
-            <SimpleBarChart data={topCollectionCategories} title="Collections by Category" color="#3B82F6" />
-          </div>
-          <SimpleBarChart data={topCollectionMakers} title="Top Collection Makers" color="#8B5CF6" />
-        </div>
-      )}
-
       {/* Quality Analysis */}
       {activeSection === 'quality' && (
         <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="academic-card-elevated p-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Games Documentation</h3>
               <div className="space-y-6">
@@ -751,59 +544,6 @@ export default function ResearchDashboard() {
                 </div>
               </div>
             </div>
-
-            <div className="academic-card-elevated p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Collections Documentation</h3>
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-700 font-medium">Collections with Images</span>
-                    <span className="text-gray-900 font-bold">
-                      {stats.totalCollections > 0 ? Math.round((stats.documentedCollections / stats.totalCollections) * 100) : 0}%
-                    </span>
-                  </div>
-                  <div className="bg-gray-200 rounded-full h-4">
-                    <div 
-                      className="bg-gradient-to-r from-purple-500 to-purple-600 h-4 rounded-full"
-                      style={{ width: `${stats.totalCollections > 0 ? (stats.documentedCollections / stats.totalCollections) * 100 : 0}%` }}
-                    />
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {stats.documentedCollections} of {stats.totalCollections} collections
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="academic-card-elevated p-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Overall Quality Metrics</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="text-center bg-green-50 border border-green-200 rounded-xl p-6">
-                <h4 className="font-semibold text-green-800 mb-1">Overall Documentation</h4>
-                <div className="text-3xl font-bold text-green-600 mb-1">{overallDocRate}%</div>
-                <p className="text-green-700 text-sm">items with visuals</p>
-              </div>
-              
-              <div className="text-center bg-blue-50 border border-blue-200 rounded-xl p-6">
-                <h4 className="font-semibold text-blue-800 mb-1">Content Variety</h4>
-                <div className="text-3xl font-bold text-blue-600 mb-1">{stats.uniqueGenres + stats.uniqueCategories}</div>
-                <p className="text-blue-700 text-sm">types covered</p>
-              </div>
-              
-              <div className="text-center bg-purple-50 border border-purple-200 rounded-xl p-6">
-                <h4 className="font-semibold text-purple-800 mb-1">Creator Diversity</h4>
-                <div className="text-3xl font-bold text-purple-600 mb-1">{stats.uniqueDevelopers + stats.uniqueMakers}</div>
-                <p className="text-purple-700 text-sm">unique creators</p>
-              </div>
-
-              <div className="text-center bg-orange-50 border border-orange-200 rounded-xl p-6">
-                <h4 className="font-semibold text-orange-800 mb-1">Collection Size</h4>
-                <div className="text-3xl font-bold text-orange-600 mb-1">{stats.totalItems}</div>
-                <p className="text-orange-700 text-sm">total items</p>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
