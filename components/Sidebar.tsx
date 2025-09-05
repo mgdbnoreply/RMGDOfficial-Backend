@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Gamepad2, 
   BarChart3, 
@@ -13,7 +13,7 @@ import {
   Users,
   ChevronDown,
   ChevronRight,
-  CheckSquare // New Icon
+  CheckSquare
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -27,35 +27,70 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const [showUserManagement, setShowUserManagement] = useState(false);
   const { user, logout, users } = useAuth();
 
-  // Define menu items for different roles
-  const adminMenuItems = [
-    { id: 'admin', label: 'System Administration', icon: Settings, description: 'System settings & configuration' },
-    { id: 'analytics', label: 'Research Analytics', icon: BarChart3, description: 'Historical analysis & insights' },
-    { id: 'approvals', label: 'Approval Queue', icon: CheckSquare, description: 'Review user submissions' },
-    { id: 'console', label: 'Console Collection', icon: Database, description: 'Physical device preservation' },
-    { id: 'games', label: 'Game Collection', icon: Gamepad2, description: 'Manage retro mobile games database' },
-  ].sort((a, b) => a.label.localeCompare(b.label)); // Sort alphabetically by label
-
-  const researcherMenuItems = [
-    { id: 'games', label: 'Game Collection', icon: Gamepad2, description: 'Manage retro mobile games database' },
-    { id: 'console', label: 'Console Collection', icon: Database, description: 'Physical device preservation' },
-    { id: 'analytics', label: 'Research Analytics', icon: BarChart3, description: 'Historical analysis & insights' }
+  const baseMenuItems = [
+    {
+      id: 'games',
+      label: 'Game Collection',
+      icon: Gamepad2,
+      description: 'Manage retro mobile games database'
+    },
+    {
+      id: 'console',
+      label: 'Console Collection',
+      icon: Database,
+      description: 'Physical device preservation'
+    },
+    {
+      id: 'analytics',
+      label: 'Research Analytics',
+      icon: BarChart3,
+      description: 'Historical analysis & insights'
+    },
+    {
+      id: 'admin',
+      label: 'System Administration',
+      icon: Settings,
+      description: 'System settings & configuration'
+    },
+    {
+      id: 'approval',
+      label: 'Approval Queue',
+      icon: CheckSquare,
+      description: 'Review user submissions'
+    },
+    {
+      id: 'users',
+      label: 'User Management',
+      icon: Users,
+      description: 'Manage portal access'
+    },
+    {
+      id: 'user-dashboard',
+      label: 'My Dashboard',
+      icon: User,
+      description: 'View your submissions'
+    }
   ];
 
-  const userMenuItems = [
-      { id: 'user_dashboard', label: 'My Dashboard', icon: User, description: 'Submit games and track your contributions' }
-  ];
-  
-  const getMenuItems = () => {
-      switch(user?.role) {
-          case 'admin': return adminMenuItems;
-          case 'researcher': return researcherMenuItems;
-          case 'user': return userMenuItems;
-          default: return [];
-      }
-  }
+  const menuItems = useMemo(() => {
+    if (!user) return [];
 
-  const menuItems = getMenuItems();
+    let items;
+    switch (user.role) {
+      case 'admin':
+        items = baseMenuItems.filter(item => item.id !== 'user-dashboard');
+        // Sort alphabetically for admin
+        return items.sort((a, b) => a.label.localeCompare(b.label));
+      case 'researcher':
+        return baseMenuItems.filter(item => 
+          item.id === 'games' || item.id === 'console' || item.id === 'analytics'
+        );
+      case 'user':
+        return baseMenuItems.filter(item => item.id === 'user-dashboard');
+      default:
+        return [];
+    }
+  }, [user]);
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to logout?')) {
@@ -88,11 +123,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white">RMGD</h2>
-                  <p className="text-red-100 text-sm font-medium">
-                    {user?.role === 'admin' && 'Admin Portal'}
-                    {user?.role === 'researcher' && 'Research Portal'}
-                    {user?.role === 'user' && 'Contributor Portal'}
-                  </p>
+                  <p className="text-red-100 text-sm font-medium">Admin Portal</p>
                 </div>
               </div>
             )}
@@ -122,55 +153,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                   </div>
                 </div>
               </div>
-
-              {/* User Management Toggle for Admins */}
-              {user?.role === 'admin' && (
-                <>
-                  <button
-                    onClick={() => setShowUserManagement(!showUserManagement)}
-                    className="w-full flex items-center justify-between p-3 text-red-100 hover:text-white hover:bg-white/10 rounded-xl transition-all"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Users className="w-5 h-5" />
-                      <span className="text-base font-medium">User Management</span>
-                    </div>
-                    {showUserManagement ? (
-                      <ChevronDown className="w-4 h-4" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4" />
-                    )}
-                  </button>
-
-                  {/* User List */}
-                  {showUserManagement && (
-                    <div className="ml-8 space-y-2">
-                      <div className="text-xs text-red-200 font-medium mb-2 uppercase tracking-wide">
-                        Active Users ({users.length})
-                      </div>
-                      {users.map((u) => (
-                        <div key={u.id} className="flex items-center space-x-2 p-2 bg-white/10 rounded-lg">
-                          <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-                            <User className="w-3 h-3 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white truncate">{u.name}</p>
-                            <p className="text-xs text-red-200 truncate">{u.email}</p>
-                          </div>
-                          {u.id === user?.id && (
-                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                          )}
-                        </div>
-                      ))}
-                      <button
-                        onClick={() => setActiveTab('users')}
-                        className="w-full p-2 text-sm text-red-200 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                      >
-                        Manage Users →
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
             </div>
           </div>
         )}
@@ -206,43 +188,16 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        {!isCollapsed && (
-          <div className="p-4 border-t border-red-700/30">
-            <div className="space-y-3">
-              {/* Status */}
-              <div className="sidebar-card p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-base text-white font-medium">System Online</span>
-                  </div>
-                  <Clock className="w-5 h-5 text-green-400" />
-                </div>
-              </div>
-
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center space-x-3 p-3 text-red-100 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium text-base">Logout</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Collapsed Mode Toggle */}
-        {isCollapsed && (
-          <div className="p-4 border-t border-red-700/30 hidden lg:block">
-            <button
-              onClick={() => setIsCollapsed(false)}
-              className="w-full p-3 text-red-100 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+        <div className={`absolute bottom-0 w-full p-4 border-t border-red-700/30 ${isCollapsed ? 'hidden lg:block' : ''}`}>
+           <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center space-x-3 p-3 text-red-100 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
             >
-              <Menu className="w-6 h-6 mx-auto" />
+              <LogOut className="w-6 h-6" />
+              {!isCollapsed && <span className="font-medium text-base">Logout</span>}
             </button>
-          </div>
-        )}
+        </div>
+
       </div>
 
       {/* Mobile Menu Button */}
@@ -257,3 +212,4 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     </>
   );
 }
+
