@@ -9,6 +9,7 @@ interface User {
   name: string;
   createdAt: string;
   lastLogin?: string;
+  password?: string; // Add this line
 }
 
 interface AuthContextType {
