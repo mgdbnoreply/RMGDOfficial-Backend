@@ -6,23 +6,18 @@ const API_BASE = 'https://u3iysopa88.execute-api.us-east-1.amazonaws.com';
 const convertToDynamoDBFormat = (gameData: any) => {
   const formatted: any = {};
   
-  // Convert each field to DynamoDB format if needed
   Object.keys(gameData).forEach(key => {
     const value = gameData[key];
     
-    // Check if already in DynamoDB format
     if (value && typeof value === 'object' && (value.S !== undefined || value.SS !== undefined || value.N !== undefined)) {
       formatted[key] = value;
     } 
-    // Convert strings to DynamoDB format
     else if (typeof value === 'string') {
       formatted[key] = { S: value };
     }
-    // Convert string arrays to DynamoDB format
     else if (Array.isArray(value)) {
       formatted[key] = { SS: value };
     }
-    // Handle numbers
     else if (typeof value === 'number') {
       formatted[key] = { N: value.toString() };
     }
@@ -31,34 +26,38 @@ const convertToDynamoDBFormat = (gameData: any) => {
   return formatted;
 };
 
-// ==================== NEW CODE STARTS HERE ====================
-// This new helper function is ONLY used for the User API.
-
 /**
  * Converts a single DynamoDB-formatted item into a regular JavaScript object.
- * It also renames 'UserID' to 'id' to match the frontend's expectation.
+ * It also handles capitalized keys from the database (e.g., "UserID", "Email")
+ * and maps them to the lowercase keys the frontend application expects (e.g., "id", "email").
  * @param {any} item - The item from DynamoDB with keys like { "S": "value" }.
  * @returns {any} A clean JavaScript object.
  */
 const unmarshall = (item: any) => {
   if (!item) return {};
   const obj: { [key: string]: any } = {};
+  
+  // First, extract all values from the DynamoDB format
   for (const key in item) {
     const valueObject = item[key];
     if (valueObject) {
-      const type = Object.keys(valueObject)[0]; // 'S', 'N', 'SS', etc.
+      const type = Object.keys(valueObject)[0];
       obj[key] = valueObject[type];
     }
   }
-  // The frontend code expects an 'id' property.
-  if (obj.UserID) {
-    obj.id = obj.UserID;
-    delete obj.UserID;
-  }
-  return obj;
-};
-// ==================== NEW CODE ENDS HERE ====================
 
+  // Next, map the capitalized keys from the DB to the lowercase keys the app uses.
+  const mappedObj: { [key: string]: any } = {};
+  if (obj.UserID) mappedObj.id = obj.UserID;
+  if (obj.Email) mappedObj.email = obj.Email; // Correctly maps "Email" to "email"
+  if (obj.Name) mappedObj.name = obj.Name;
+  if (obj.Role) mappedObj.role = obj.Role;
+  if (obj.createdAt) mappedObj.createdAt = obj.createdAt;
+  if (obj.lastLogin) mappedObj.lastLogin = obj.lastLogin;
+
+
+  return mappedObj;
+};
 
 // ===== EXISTING GAME API (UNCHANGED) =====
 export const GameAPI = {
@@ -184,7 +183,7 @@ export const GameAPI = {
   }
 };
 
-// ===== NEW COLLECTIONS API (UNCHANGED) =====
+// ===== COLLECTIONS API (UNCHANGED) =====
 export const CollectionsAPI = {
   getAllCollections: async (): Promise<any[]> => {
     try {
@@ -294,8 +293,7 @@ export const CollectionsAPI = {
   }
 };
 
-// ==================== UPDATED USER API ====================
-// This is the only other part that has changed.
+// ===== USER API (UPDATED) =====
 export const UserAPI = {
   getAllUsers: async (): Promise<any[]> => {
     try {
@@ -303,21 +301,20 @@ export const UserAPI = {
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
       const items = Array.isArray(data) ? data : [data];
-      // Use the new helper to clean the data
+      // Use the helper to clean the data from DynamoDB format to simple JS objects
       return items.map(unmarshall);
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
     }
   },
-  // These functions are placeholders for when you expand your backend
+  // Placeholders for when you add POST, PUT, DELETE to your backend Lambda
   createUser: async (userData: any) => null,
   updateUser: async (userId: string, userData: any) => false,
   deleteUser: async (userId: string) => false,
 };
-// ==========================================================
 
-// ===== EXISTING DASHBOARD API (UNCHANGED) =====
+// ===== DASHBOARD API (UNCHANGED) =====
 export const DashboardAPI = {
   getDashboardStats: async (): Promise<any> => {
     try {

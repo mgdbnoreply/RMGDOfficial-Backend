@@ -31,8 +31,8 @@ export default function Login() {
 
   const handleDemoLogin = (role: 'admin' | 'researcher' | 'user') => {
     if (role === 'admin') {
-      setEmail('admin@rmgd.org');
-      setPassword('admin');
+      setEmail('parkar.ar@northeastern.edu');
+      setPassword('ib2026ib');
     } else if (role === 'researcher') {
       setEmail('researcher@rmgd.org');
       setPassword('researcher');
