@@ -8,6 +8,20 @@ export type Game = {
   YearDeveloped: { S: string };
   Genre: { S: string };
   Photos: { SS: string[] };
+  // ADDED: New detailed fields
+  Connectivity?: { S: string };
+  ControlMechanisms?: { S: string };
+  DeveloperLocation?: { S: string };
+  DeviceType?: { S: string };
+  GameWebsite?: { S: string };
+  HardwareFeatures?: { S: string };
+  MobilityType?: { S: string };
+  MonetizationModel?: { S: string };
+  OpenSource?: { S: string };
+  Players?: { S: string };
+  Purpose?: { S: string };
+  SiteSpecific?: { S: string };
+  Videos?: { SS: string[] };
   [key: string]: unknown;
 };
 
@@ -18,6 +32,20 @@ export type NewGame = {
   YearDeveloped: string;
   Genre: string;
   Photos: string[];
+  // ADDED: New detailed fields for creation
+  Connectivity: string;
+  ControlMechanisms: string;
+  DeveloperLocation: string;
+  DeviceType: string;
+  GameWebsite: string;
+  HardwareFeatures: string;
+  MobilityType: string;
+  MonetizationModel: string;
+  OpenSource: string;
+  Players: string;
+  Purpose: string;
+  SiteSpecific: string;
+  Videos: string[];
 };
 
 export type DashboardStats = {
@@ -33,7 +61,7 @@ export type DashboardStats = {
  * Your actual API Collection format - DynamoDB structure
  */
 export type CollectionDynamoDB = {
-  ProductID: { S: string };
+  productId: { S: string };
   category: { S: string };
   description: { S: string };
   id: { S: string };
@@ -91,20 +119,6 @@ export const COLLECTION_CATEGORIES = [
 export type CollectionCategory = typeof COLLECTION_CATEGORIES[number];
 
 /**
- * Collection status options (optional feature)
- */
-export const COLLECTION_STATUS = [
-  'active',
-  'archived',
-  'maintenance',
-  'missing',
-  'on_loan',
-  'damaged'
-] as const;
-
-export type CollectionStatus = typeof COLLECTION_STATUS[number];
-
-/**
  * Collection search parameters
  */
 export type CollectionSearchQuery = {
@@ -149,7 +163,7 @@ export type CollectionStats = {
 /**
  * User roles in the RMGD system
  */
-export type UserRole = 'admin' | 'researcher' | 'curator' | 'viewer';
+export type UserRole = 'admin' | 'researcher' | 'user';
 
 /**
  * User account information
@@ -396,14 +410,14 @@ export const extractStringArray = (value: any): string[] => {
  */
 export function collectionToDisplay(item: CollectionDynamoDB): Collection {
   return {
-    id: extractString(item.id || item.ProductID),
+    id: extractString(item.id || item.productId),
     name: extractString(item.name),
     category: extractString(item.category),
     description: extractString(item.description),
     maker: extractString(item.maker),
     year: extractString(item.year),
     image: extractString(item.image),
-    productId: extractString(item.ProductID),
+    productId: extractString(item.productId),
     status: 'active', // default since not in your API
   };
 }
@@ -415,7 +429,7 @@ export function newCollectionToDynamo(newCollection: NewCollection): CollectionD
   const productId = `${newCollection.maker.toLowerCase().replace(/\s+/g, '-')}-${newCollection.name.toLowerCase().replace(/\s+/g, '-')}`;
   
   return {
-    ProductID: { S: productId },
+    productId: { S: productId },
     category: { S: newCollection.category },
     description: { S: newCollection.description },
     id: { S: productId },
@@ -474,7 +488,7 @@ export function isCollection(value: unknown): value is CollectionDynamoDB {
   return (
     typeof value === 'object' &&
     value !== null &&
-    'ProductID' in value &&
+    'productId' in value &&
     'name' in value &&
     'category' in value
   );
@@ -549,16 +563,7 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, UserPermissions> = {
     canExportData: true,
     canAccessAdmin: false,
   },
-  curator: {
-    canCreate: true,
-    canEdit: true,
-    canDelete: true,
-    canManageUsers: false,
-    canViewAnalytics: true,
-    canExportData: false,
-    canAccessAdmin: false,
-  },
-  viewer: {
+  user: {
     canCreate: false,
     canEdit: false,
     canDelete: false,
@@ -667,3 +672,4 @@ export type ThemeConfig = {
     secondary: string;
   };
 };
+
