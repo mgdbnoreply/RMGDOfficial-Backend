@@ -38,12 +38,12 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// TEMPORARY: Client-side password dictionary for login.
+// ==================== CORRECTED PASSWORD LIST ====================
+// This now includes the correct credentials for your user.
 const tempPasswords: Record<string, string> = {
-  'admin@rmgd.org': 'admin',
-  'researcher@rmgd.org': 'researcher',
-  'user@rmgd.org': 'user'
+  'parkar.ar@northeastern.edu': 'ib2026ib'
 };
+// =================================================================
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
@@ -55,15 +55,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log("AuthContext: Starting to initialize and fetch users...");
       try {
         const fetchedUsers = await UserAPI.getAllUsers();
-        
-        // ==================== DIAGNOSTIC LOG 1 ====================
         console.log("AuthContext: Raw data fetched from API:", fetchedUsers);
-        // ==========================================================
-        
-        if (!fetchedUsers || fetchedUsers.length === 0) {
-          console.error("AuthContext: No users were fetched from the API. The array is empty or undefined.");
-        }
-        
         setUsers(fetchedUsers);
 
         const storedCurrentUser = localStorage.getItem('rmgd_admin_user');
@@ -71,9 +63,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(JSON.parse(storedCurrentUser));
         }
       } catch (error) {
-        // ==================== DIAGNOSTIC LOG 2 ====================
         console.error("AuthContext: An error occurred while fetching users.", error);
-        // ==========================================================
       } finally {
         setLoading(false);
         console.log("AuthContext: Initialization finished.");
@@ -83,20 +73,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // ==================== DIAGNOSTIC LOG 3 ====================
     console.log(`AuthContext: Attempting login for email: "${email}" with password: "${password}"`);
     console.log("AuthContext: Current state of users array:", users);
-    // ==========================================================
 
     const foundUser = users.find(u => u.email === email);
     
-    // ==================== DIAGNOSTIC LOG 4 ====================
     if (foundUser) {
       console.log("AuthContext: User found in state:", foundUser);
     } else {
       console.error("AuthContext: User NOT found in state for email:", email);
     }
-    // ==========================================================
 
     const expectedPassword = tempPasswords[email];
 
