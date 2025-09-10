@@ -24,7 +24,8 @@ export default function UserManagement() {
     const success = await addUser({
       Email: newUser.Email,
       Name: newUser.Name,
-      Role: newUser.Role
+      Role: newUser.Role,
+      Status: 'approved' // Admins add pre-approved users
     });
 
     if (success) {
@@ -67,7 +68,6 @@ export default function UserManagement() {
     setEditData({ name: user.name, role: user.role });
   };
 
-
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -76,11 +76,21 @@ export default function UserManagement() {
   };
 
   const getRoleColor = (role: string) => {
-    const roleLower = role.toLowerCase();
+    const roleLower = role?.toLowerCase();
     switch (roleLower) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200';
       case 'researcher': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'user': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+  
+  const getStatusColor = (status?: string) => {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -89,7 +99,7 @@ export default function UserManagement() {
     <div className="academic-card-elevated p-8">
         <h3 className="text-xl font-bold text-primary mb-6">{title} ({userList.length})</h3>
         <div className="space-y-6">
-            {userList.map((u) => (
+            {userList.length > 0 ? userList.map((u) => (
                 <div key={u.id} className="academic-card p-6 hover:shadow-md transition-all">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -102,18 +112,15 @@ export default function UserManagement() {
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(u.role)}`}>
                                         {u.role}
                                     </span>
-                                    {u.id === currentUser?.id && (
-                                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
-                                            Current User
-                                        </span>
+                                    {u.status && (
+                                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(u.status)}`}>
+                                        {u.status}
+                                      </span>
                                     )}
                                 </div>
                                 <p className="text-gray-700 text-base mb-2">{u.email}</p>
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                     <span>Created: {formatDate(u.createdAt)}</span>
-                                    {u.lastLogin && (
-                                        <span>Last Login: {formatDate(u.lastLogin)}</span>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -190,7 +197,7 @@ export default function UserManagement() {
                         </div>
                     )}
                 </div>
-            ))}
+            )) : <p className="text-gray-500">No users in this category.</p>}
         </div>
     </div>
   );
@@ -245,14 +252,14 @@ export default function UserManagement() {
             </div>
           </div>
           
-          <div className="bg-green-50 rounded-xl p-6 border border-green-200">
+          <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-yellow-600 rounded-xl flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-green-700 text-sm font-medium">Pending Approval</p>
-                <p className="text-green-900 text-2xl font-bold">{pendingUsers.length}</p>
+                <p className="text-yellow-700 text-sm font-medium">Pending Approval</p>
+                <p className="text-yellow-900 text-2xl font-bold">{pendingUsers.length}</p>
               </div>
             </div>
           </div>

@@ -164,6 +164,7 @@ export type User = {
   isActive: boolean;
   permissions?: UserPermissions;
   preferences?: UserPreferences;
+  status?: 'approved' | 'pending' | 'rejected';
 };
 
 /**
