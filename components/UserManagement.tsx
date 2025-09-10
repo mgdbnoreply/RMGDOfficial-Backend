@@ -24,7 +24,8 @@ export default function UserManagement() {
     const success = await addUser({
       Email: newUser.Email,
       Name: newUser.Name,
-      Role: newUser.Role
+      Role: newUser.Role,
+      Status: 'approved'
     });
 
     if (success) {
