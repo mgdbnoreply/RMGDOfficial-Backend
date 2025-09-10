@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock, Check, X as XIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserManagement() {
@@ -14,9 +14,9 @@ export default function UserManagement() {
   });
   const [editData, setEditData] = useState({ name: '', role: '' });
 
-
-  const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'Admin' || u.role === 'researcher');
-  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'Admin' && u.role !== 'researcher');
+  const pendingUsers = users.filter(u => u.status === 'pending');
+  const approvedUsers = users.filter(u => u.status !== 'pending' && u.status !== 'rejected');
+  const rejectedUsers = users.filter(u => u.status === 'rejected');
 
   const handleAddUser = async () => {
     if (!newUser.Email.trim() || !newUser.Name.trim()) return;
@@ -56,6 +56,10 @@ export default function UserManagement() {
 
     await updateUser(userId, payload);
     setEditingUser(null);
+  };
+
+  const handleApproval = async (userId: string, status: 'approved' | 'rejected') => {
+    await updateUser(userId, { Status: status });
   };
 
   const startEditing = (user: typeof users[0]) => {
@@ -114,21 +118,42 @@ export default function UserManagement() {
                             </div>
                         </div>
                         <div className="flex space-x-2">
-                            <button
-                                onClick={() => startEditing(u)}
-                                className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-                                title="Edit User"
-                            >
-                                <Edit2 className="w-5 h-5" />
-                            </button>
-                            {u.id !== currentUser?.id && (
+                            {u.status === 'pending' ? (
+                              <>
                                 <button
-                                    onClick={() => handleDeleteUser(u.id)}
-                                    className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                                    title="Delete User"
+                                  onClick={() => handleApproval(u.id, 'approved')}
+                                  className="p-3 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all"
+                                  title="Approve User"
                                 >
-                                    <Trash2 className="w-5 h-5" />
+                                  <Check className="w-5 h-5" />
                                 </button>
+                                <button
+                                  onClick={() => handleApproval(u.id, 'rejected')}
+                                  className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                                  title="Reject User"
+                                >
+                                  <XIcon className="w-5 h-5" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                    onClick={() => startEditing(u)}
+                                    className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                                    title="Edit User"
+                                >
+                                    <Edit2 className="w-5 h-5" />
+                                </button>
+                                {u.id !== currentUser?.id && (
+                                    <button
+                                        onClick={() => handleDeleteUser(u.id)}
+                                        className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                                        title="Delete User"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                )}
+                              </>
                             )}
                         </div>
                     </div>
@@ -214,8 +239,8 @@ export default function UserManagement() {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-blue-700 text-sm font-medium">Internal Users</p>
-                <p className="text-blue-900 text-2xl font-bold">{internalUsers.length}</p>
+                <p className="text-blue-700 text-sm font-medium">Approved Users</p>
+                <p className="text-blue-900 text-2xl font-bold">{approvedUsers.length}</p>
               </div>
             </div>
           </div>
@@ -226,8 +251,8 @@ export default function UserManagement() {
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-green-700 text-sm font-medium">External Users</p>
-                <p className="text-green-900 text-2xl font-bold">{externalUsers.length}</p>
+                <p className="text-green-700 text-sm font-medium">Pending Approval</p>
+                <p className="text-green-900 text-2xl font-bold">{pendingUsers.length}</p>
               </div>
             </div>
           </div>
@@ -304,8 +329,9 @@ export default function UserManagement() {
       )}
 
       {/* Users Lists */}
-      <UserListSection title="Internal Users" userList={internalUsers} />
-      <UserListSection title="External Users" userList={externalUsers} />
+      {pendingUsers.length > 0 && <UserListSection title="Pending Approval" userList={pendingUsers} />}
+      <UserListSection title="Approved Users" userList={approvedUsers} />
+      {rejectedUsers.length > 0 && <UserListSection title="Rejected Users" userList={rejectedUsers} />}
     </div>
   );
 }
