@@ -11,6 +11,7 @@ interface User {
   createdAt: string;
   lastLogin?: string;
   password?: string; // Optional: used only for password change forms
+  status?: 'pending' | 'approved' | 'rejected'; // Added status
 }
 
 interface AuthContextType {
@@ -20,9 +21,9 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
-  addUser: (userData: { Name: string, Email: string, Role: string }) => Promise<boolean>;
+  addUser: (userData: { Name: string, Email: string, Password?: string, Role: string, Status: string }) => Promise<boolean>; // Added Password and Status
   deleteUser: (userId: string) => Promise<boolean>;
-  updateUser: (userId: string, userData: Partial<{ Name: string, Role: string, Password: string }>) => Promise<boolean>;
+  updateUser: (userId: string, userData: Partial<{ Name: string, Role: string, Password: string, Status: string }>) => Promise<boolean>; // Added Status
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,7 +91,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Creates a new user and refreshes the local user list.
    */
-  const addUser = async (userData: { Name: string, Email: string, Role: string }): Promise<boolean> => {
+  const addUser = async (userData: { Name: string, Email: string, Password?: string, Role: string, Status: string }): Promise<boolean> => {
     const newUser = await UserAPI.createUser(userData);
     if (newUser) {
       await fetchAllUsers(); // Refresh the list from the server
@@ -113,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Updates a user and refreshes the local user list.
    */
-  const updateUser = async (userId: string, userData: Partial<{ Name: string, Role: string, Password: string }>): Promise<boolean> => {
+  const updateUser = async (userId: string, userData: Partial<{ Name: string, Role: string, Password: string, Status: string }>): Promise<boolean> => {
     const success = await UserAPI.updateUser(userId, userData);
     if (success) {
       await fetchAllUsers(); // Refresh the list
@@ -139,4 +140,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-

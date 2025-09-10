@@ -12,6 +12,7 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('user'); // Added role state
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,13 +36,15 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
     setLoading(true);
 
     try {
-      const success = await addUser({ Name: name, Email: email, Role: 'user' });
+      // Pass all necessary fields to addUser
+      const success = await addUser({ Name: name, Email: email, Password: password, Role: role, Status: 'pending' });
       if (success) {
         setSuccess('Account created successfully! An administrator will review your request.');
         setName('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
+        setRole('user');
       } else {
         setError('Failed to create account. Please try again.');
       }
@@ -114,6 +117,20 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
                 className="academic-input w-full"
                 required
               />
+            </div>
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="academic-input w-full"
+              >
+                <option value="user">User</option>
+                <option value="researcher">Researcher</option>
+              </select>
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             {success && <p className="text-green-500 text-sm">{success}</p>}
