@@ -315,12 +315,10 @@ export const UserAPI = {
    */
   login: async (email: string, password: string): Promise<any | null> => {
     try {
-      const formattedData = convertToDynamoDBFormat({ email, password });
-      // Change the endpoint from /login to /user
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formattedData),
+        body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
         const errorText = await res.text();
