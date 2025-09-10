@@ -42,7 +42,7 @@ function DashboardContent() {
   useEffect(() => {
     if (isAuthenticated) {
         // Set default tab based on role and fetch data accordingly
-        if (user?.role === 'user') {
+        if (user?.role?.toLowerCase() === 'user') {
             setActiveTab('user_dashboard');
             // User-specific data would be fetched here
         } else { // Admin and Researcher
