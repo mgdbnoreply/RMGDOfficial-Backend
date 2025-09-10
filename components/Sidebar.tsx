@@ -53,7 +53,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       description: 'System settings & configuration'
     },
     {
-      id: 'approval',
+      id: 'approvals',
       label: 'Approval Queue',
       icon: CheckSquare,
       description: 'Review user submissions'
