@@ -82,6 +82,19 @@ export default function UserManagement() {
     }
   };
 
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
   const UserListSection = ({ title, userList }: { title: string, userList: typeof users }) => (
     <div className="academic-card-elevated p-8">
         <h3 className="text-xl font-bold text-primary mb-6">{title} ({userList.length})</h3>
@@ -99,6 +112,11 @@ export default function UserManagement() {
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(u.role)}`}>
                                         {u.role}
                                     </span>
+                                    {u.status && u.status !== 'approved' && (
+                                      <span className={`px-3 py-1 rounded-full text-sm font-medium border capitalize ${getStatusColor(u.status)}`}>
+                                        {u.status}
+                                      </span>
+                                    )}
                                     {u.id === currentUser?.id && (
                                         <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
                                             Current User
