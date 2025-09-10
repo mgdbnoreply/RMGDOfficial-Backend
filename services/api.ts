@@ -315,18 +315,20 @@ export const UserAPI = {
    */
   login: async (email: string, password: string): Promise<any | null> => {
     try {
+      const formattedData = convertToDynamoDBFormat({ email, password });
       // Change the endpoint from /login to /user
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formattedData),
       });
       if (!res.ok) {
         const errorText = await res.text();
         console.error('Login failed:', errorText);
         return null;
       }
-      return await res.json();
+      const data = await res.json();
+      return { user: unmarshallUser(data.user) };
     } catch (error) {
       console.error('Error in login API call:', error);
       return null;
@@ -342,7 +344,8 @@ export const UserAPI = {
       // The endpoint is /user, not /users
       const res = await fetch(`${API_BASE}/user`);
       if (!res.ok) throw new Error('Failed to fetch users');
-      return await res.json();
+      const data = await res.json();
+      return data.map(unmarshallUser);
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
