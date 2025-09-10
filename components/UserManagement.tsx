@@ -184,7 +184,7 @@ export default function UserManagement() {
                                         className="academic-input w-full text-base"
                                         disabled={u.email === 'admin@rmgd.org'}
                                     >
-                                        <option value="Admin">Administrator</option>
+                                        <option value="admin">Administrator</option>
                                         <option value="researcher">Researcher</option>
                                         <option value="user">User</option>
                                     </select>
@@ -311,7 +311,7 @@ export default function UserManagement() {
               >
                 <option value="user">User (External)</option>
                 <option value="researcher">Researcher (Internal)</option>
-                <option value="Admin">Administrator (Internal)</option>
+                <option value="admin">Administrator (Internal)</option>
               </select>
             </div>
           </div>
