@@ -2,14 +2,15 @@ import { Game } from '@/types';
 
 const API_BASE = 'https://u3iysopa88.execute-api.us-east-1.amazonaws.com';
 
-// Helper function to convert frontend Game object to DynamoDB format
-const convertToDynamoDBFormat = (gameData: any) => {
+// Helper function to convert frontend object to DynamoDB format
+const convertToDynamoDBFormat = (data: any) => {
   const formatted: any = {};
   
-  Object.keys(gameData).forEach(key => {
-    const value = gameData[key];
+  Object.keys(data).forEach(key => {
+    const value = data[key];
     
     if (value && typeof value === 'object' && (value.S !== undefined || value.SS !== undefined || value.N !== undefined)) {
+      // Already in DynamoDB format
       formatted[key] = value;
     } 
     else if (typeof value === 'string') {
@@ -51,7 +52,8 @@ const unmarshallUser = (item: any) => {
         name: userObject.Name,
         password: userObject.Password, // Include the password for the login check
         role: userObject.Role,
-        createdAt: userObject.CreatedAt || new Date().toISOString()
+        createdAt: userObject.CreatedAt || new Date().toISOString(),
+        status: userObject.Status
     };
 };
 
@@ -313,14 +315,20 @@ export const UserAPI = {
    */
   login: async (email: string, password: string): Promise<any | null> => {
     try {
+      const formattedData = convertToDynamoDBFormat({ email, password });
       // Change the endpoint from /login to /user
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formattedData),
       });
-      if (!res.ok) return null;
-      return await res.json();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Login failed:', errorText);
+        return null;
+      }
+      const data = await res.json();
+      return { user: unmarshallUser(data.user) };
     } catch (error) {
       console.error('Error in login API call:', error);
       return null;
@@ -336,7 +344,8 @@ export const UserAPI = {
       // The endpoint is /user, not /users
       const res = await fetch(`${API_BASE}/user`);
       if (!res.ok) throw new Error('Failed to fetch users');
-      return await res.json();
+      const data = await res.json();
+      return data.map(unmarshallUser);
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -346,13 +355,19 @@ export const UserAPI = {
   /**
    * Calls the POST /user endpoint to create a new user.
    */
-  createUser: async (userData: { Name: string; Email: string; Role: string }): Promise<any | null> => {
+  createUser: async (userData: { Name: string; Email: string; Role: string, Status?: string }): Promise<any | null> => {
     try {
+      const formattedData = convertToDynamoDBFormat(userData);
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(formattedData)
       });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Create user failed:', errorText);
+        return null;
+      }
       return res.ok ? await res.json() : null;
     } catch (error) {
       console.error('Error creating user:', error);
@@ -363,13 +378,19 @@ export const UserAPI = {
   /**
    * Calls the PUT /user/{UserID} endpoint to update a user.
    */
-  updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string }): Promise<boolean> => {
+  updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string, Status?: string }): Promise<boolean> => {
     try {
+      const formattedData = convertToDynamoDBFormat(userData);
       const res = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(formattedData)
       });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Update user failed:', errorText);
+        return false;
+      }
       return res.ok;
     } catch (error) {
       console.error('Error updating user:', error);
@@ -385,6 +406,11 @@ export const UserAPI = {
       const res = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'DELETE'
       });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Delete user failed:', errorText);
+        return false;
+      }
       return res.ok;
     } catch (error) {
       console.error('Error deleting user:', error);

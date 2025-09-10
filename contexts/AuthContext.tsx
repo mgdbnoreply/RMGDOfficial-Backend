@@ -11,6 +11,7 @@ interface User {
   createdAt: string;
   lastLogin?: string;
   password?: string; // Optional: used only for password change forms
+  status?: 'approved' | 'pending' | 'rejected';
 }
 
 interface AuthContextType {
@@ -20,9 +21,9 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
-  addUser: (userData: { Name: string, Email: string, Role: string }) => Promise<boolean>;
+  addUser: (userData: { Name: string, Email: string, Role: string, Status?: string }) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<boolean>;
-  updateUser: (userId: string, userData: Partial<{ Name: string, Role: string, Password: string }>) => Promise<boolean>;
+  updateUser: (userId: string, userData: Partial<{ Name: string, Role: string, Password: string, Status: string }>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,6 +74,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // The API returns an object like { user: {...} } on success
     if (response && response.user) {
+      if (response.user.status === 'rejected' || response.user.status === 'pending') {
+        return false; // Prevent rejected or pending users from logging in
+      }
       const loggedInUser = { ...response.user, lastLogin: new Date().toISOString() };
       setUser(loggedInUser);
       localStorage.setItem('rmgd_admin_user', JSON.stringify(loggedInUser));
@@ -90,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Creates a new user and refreshes the local user list.
    */
-  const addUser = async (userData: { Name: string, Email: string, Role: string }): Promise<boolean> => {
+  const addUser = async (userData: { Name: string, Email: string, Role: string, Status?: string }): Promise<boolean> => {
     const newUser = await UserAPI.createUser(userData);
     if (newUser) {
       await fetchAllUsers(); // Refresh the list from the server
@@ -113,7 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Updates a user and refreshes the local user list.
    */
-  const updateUser = async (userId: string, userData: Partial<{ Name: string, Role: string, Password: string }>): Promise<boolean> => {
+  const updateUser = async (userId: string, userData: Partial<{ Name: string, Role: string, Password: string, Status: string }>): Promise<boolean> => {
     const success = await UserAPI.updateUser(userId, userData);
     if (success) {
       await fetchAllUsers(); // Refresh the list
@@ -139,4 +143,3 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
