@@ -2,14 +2,15 @@ import { Game } from '@/types';
 
 const API_BASE = 'https://u3iysopa88.execute-api.us-east-1.amazonaws.com';
 
-// Helper function to convert frontend Game object to DynamoDB format
-const convertToDynamoDBFormat = (gameData: any) => {
+// Helper function to convert frontend object to DynamoDB format
+const convertToDynamoDBFormat = (data: any) => {
   const formatted: any = {};
   
-  Object.keys(gameData).forEach(key => {
-    const value = gameData[key];
+  Object.keys(data).forEach(key => {
+    const value = data[key];
     
     if (value && typeof value === 'object' && (value.S !== undefined || value.SS !== undefined || value.N !== undefined)) {
+      // Already in DynamoDB format
       formatted[key] = value;
     } 
     else if (typeof value === 'string') {
@@ -320,9 +321,12 @@ export const UserAPI = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return { user: unmarshallUser(data.user) };
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Login failed:', errorText);
+        return null;
+      }
+      return await res.json();
     } catch (error) {
       console.error('Error in login API call:', error);
       return null;
@@ -338,8 +342,7 @@ export const UserAPI = {
       // The endpoint is /user, not /users
       const res = await fetch(`${API_BASE}/user`);
       if (!res.ok) throw new Error('Failed to fetch users');
-      const data = await res.json();
-      return data.map(unmarshallUser);
+      return await res.json();
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -351,11 +354,17 @@ export const UserAPI = {
    */
   createUser: async (userData: { Name: string; Email: string; Role: string, Status?: string }): Promise<any | null> => {
     try {
+      const formattedData = convertToDynamoDBFormat(userData);
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(formattedData)
       });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Create user failed:', errorText);
+        return null;
+      }
       return res.ok ? await res.json() : null;
     } catch (error) {
       console.error('Error creating user:', error);
@@ -368,11 +377,17 @@ export const UserAPI = {
    */
   updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string, Status?: string }): Promise<boolean> => {
     try {
+      const formattedData = convertToDynamoDBFormat(userData);
       const res = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(formattedData)
       });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Update user failed:', errorText);
+        return false;
+      }
       return res.ok;
     } catch (error) {
       console.error('Error updating user:', error);
@@ -388,6 +403,11 @@ export const UserAPI = {
       const res = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'DELETE'
       });
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Delete user failed:', errorText);
+        return false;
+      }
       return res.ok;
     } catch (error) {
       console.error('Error deleting user:', error);
