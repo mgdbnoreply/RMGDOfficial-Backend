@@ -51,7 +51,8 @@ const unmarshallUser = (item: any) => {
         name: userObject.Name,
         password: userObject.Password, // Include the password for the login check
         role: userObject.Role,
-        createdAt: userObject.CreatedAt || new Date().toISOString()
+        createdAt: userObject.CreatedAt || new Date().toISOString(),
+        status: userObject.Status
     };
 };
 
@@ -320,7 +321,8 @@ export const UserAPI = {
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) return null;
-      return await res.json();
+      const data = await res.json();
+      return { user: unmarshallUser(data.user) };
     } catch (error) {
       console.error('Error in login API call:', error);
       return null;
@@ -336,7 +338,8 @@ export const UserAPI = {
       // The endpoint is /user, not /users
       const res = await fetch(`${API_BASE}/user`);
       if (!res.ok) throw new Error('Failed to fetch users');
-      return await res.json();
+      const data = await res.json();
+      return data.map(unmarshallUser);
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -346,7 +349,7 @@ export const UserAPI = {
   /**
    * Calls the POST /user endpoint to create a new user.
    */
-  createUser: async (userData: { Name: string; Email: string; Role: string }): Promise<any | null> => {
+  createUser: async (userData: { Name: string; Email: string; Role: string, Status?: string }): Promise<any | null> => {
     try {
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
@@ -363,7 +366,7 @@ export const UserAPI = {
   /**
    * Calls the PUT /user/{UserID} endpoint to update a user.
    */
-  updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string }): Promise<boolean> => {
+  updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string, Status?: string }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'PUT',

@@ -74,8 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // The API returns an object like { user: {...} } on success
     if (response && response.user) {
-      if (response.user.status === 'rejected') {
-        return false; // Prevent rejected users from logging in
+      if (response.user.status === 'rejected' || response.user.status === 'pending') {
+        return false; // Prevent rejected or pending users from logging in
       }
       const loggedInUser = { ...response.user, lastLogin: new Date().toISOString() };
       setUser(loggedInUser);
