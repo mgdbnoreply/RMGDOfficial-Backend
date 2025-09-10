@@ -82,7 +82,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     if (!user) return [];
 
     let items;
-    switch (user.role?.toLowerCase()) {
+    switch (user.role) {
       case 'admin':
         items = baseMenuItems.filter(item => item.id !== 'user-dashboard');
         // Sort alphabetically for admin

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock, Check, X as XIcon } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserManagement() {
@@ -14,9 +14,9 @@ export default function UserManagement() {
   });
   const [editData, setEditData] = useState({ name: '', role: '' });
 
-  const pendingUsers = users.filter(u => u.status === 'pending');
-  const approvedUsers = users.filter(u => u.status !== 'pending' && u.status !== 'rejected');
-  const rejectedUsers = users.filter(u => u.status === 'rejected');
+
+  const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'Admin' || u.role === 'researcher');
+  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'Admin' && u.role !== 'researcher');
 
   const handleAddUser = async () => {
     if (!newUser.Email.trim() || !newUser.Name.trim()) return;
@@ -24,8 +24,7 @@ export default function UserManagement() {
     const success = await addUser({
       Email: newUser.Email,
       Name: newUser.Name,
-      Role: newUser.Role,
-      Status: 'approved' // Admins add pre-approved users
+      Role: newUser.Role
     });
 
     if (success) {
@@ -59,14 +58,11 @@ export default function UserManagement() {
     setEditingUser(null);
   };
 
-  const handleApproval = async (userId: string, status: 'approved' | 'rejected') => {
-    await updateUser(userId, { Status: status });
-  };
-
   const startEditing = (user: typeof users[0]) => {
     setEditingUser(user.id);
     setEditData({ name: user.name, role: user.role });
   };
+
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
@@ -76,21 +72,11 @@ export default function UserManagement() {
   };
 
   const getRoleColor = (role: string) => {
-    const roleLower = role?.toLowerCase();
+    const roleLower = role.toLowerCase();
     switch (roleLower) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200';
       case 'researcher': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'user': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-  
-  const getStatusColor = (status?: string) => {
-    const statusLower = status?.toLowerCase();
-    switch (statusLower) {
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
@@ -99,7 +85,7 @@ export default function UserManagement() {
     <div className="academic-card-elevated p-8">
         <h3 className="text-xl font-bold text-primary mb-6">{title} ({userList.length})</h3>
         <div className="space-y-6">
-            {userList.length > 0 ? userList.map((u) => (
+            {userList.map((u) => (
                 <div key={u.id} className="academic-card p-6 hover:shadow-md transition-all">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -112,55 +98,37 @@ export default function UserManagement() {
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColor(u.role)}`}>
                                         {u.role}
                                     </span>
-                                    {u.status && (
-                                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(u.status)}`}>
-                                        {u.status}
-                                      </span>
+                                    {u.id === currentUser?.id && (
+                                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
+                                            Current User
+                                        </span>
                                     )}
                                 </div>
                                 <p className="text-gray-700 text-base mb-2">{u.email}</p>
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                     <span>Created: {formatDate(u.createdAt)}</span>
+                                    {u.lastLogin && (
+                                        <span>Last Login: {formatDate(u.lastLogin)}</span>
+                                    )}
                                 </div>
                             </div>
                         </div>
                         <div className="flex space-x-2">
-                            {u.status === 'pending' ? (
-                              <>
+                            <button
+                                onClick={() => startEditing(u)}
+                                className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                                title="Edit User"
+                            >
+                                <Edit2 className="w-5 h-5" />
+                            </button>
+                            {u.id !== currentUser?.id && (
                                 <button
-                                  onClick={() => handleApproval(u.id, 'approved')}
-                                  className="p-3 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all"
-                                  title="Approve User"
+                                    onClick={() => handleDeleteUser(u.id)}
+                                    className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                                    title="Delete User"
                                 >
-                                  <Check className="w-5 h-5" />
+                                    <Trash2 className="w-5 h-5" />
                                 </button>
-                                <button
-                                  onClick={() => handleApproval(u.id, 'rejected')}
-                                  className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                                  title="Reject User"
-                                >
-                                  <XIcon className="w-5 h-5" />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                    onClick={() => startEditing(u)}
-                                    className="p-3 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-                                    title="Edit User"
-                                >
-                                    <Edit2 className="w-5 h-5" />
-                                </button>
-                                {u.id !== currentUser?.id && (
-                                    <button
-                                        onClick={() => handleDeleteUser(u.id)}
-                                        className="p-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                                        title="Delete User"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-                                )}
-                              </>
                             )}
                         </div>
                     </div>
@@ -184,7 +152,7 @@ export default function UserManagement() {
                                         className="academic-input w-full text-base"
                                         disabled={u.email === 'admin@rmgd.org'}
                                     >
-                                        <option value="admin">Administrator</option>
+                                        <option value="Admin">Administrator</option>
                                         <option value="researcher">Researcher</option>
                                         <option value="user">User</option>
                                     </select>
@@ -197,7 +165,7 @@ export default function UserManagement() {
                         </div>
                     )}
                 </div>
-            )) : <p className="text-gray-500">No users in this category.</p>}
+            ))}
         </div>
     </div>
   );
@@ -246,20 +214,20 @@ export default function UserManagement() {
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-blue-700 text-sm font-medium">Approved Users</p>
-                <p className="text-blue-900 text-2xl font-bold">{approvedUsers.length}</p>
+                <p className="text-blue-700 text-sm font-medium">Internal Users</p>
+                <p className="text-blue-900 text-2xl font-bold">{internalUsers.length}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-yellow-50 rounded-xl p-6 border border-yellow-200">
+          <div className="bg-green-50 rounded-xl p-6 border border-green-200">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-yellow-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
                 <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-yellow-700 text-sm font-medium">Pending Approval</p>
-                <p className="text-yellow-900 text-2xl font-bold">{pendingUsers.length}</p>
+                <p className="text-green-700 text-sm font-medium">External Users</p>
+                <p className="text-green-900 text-2xl font-bold">{externalUsers.length}</p>
               </div>
             </div>
           </div>
@@ -311,7 +279,7 @@ export default function UserManagement() {
               >
                 <option value="user">User (External)</option>
                 <option value="researcher">Researcher (Internal)</option>
-                <option value="admin">Administrator (Internal)</option>
+                <option value="Admin">Administrator (Internal)</option>
               </select>
             </div>
           </div>
@@ -336,9 +304,8 @@ export default function UserManagement() {
       )}
 
       {/* Users Lists */}
-      {pendingUsers.length > 0 && <UserListSection title="Pending Approval" userList={pendingUsers} />}
-      <UserListSection title="Approved Users" userList={approvedUsers} />
-      {rejectedUsers.length > 0 && <UserListSection title="Rejected Users" userList={rejectedUsers} />}
+      <UserListSection title="Internal Users" userList={internalUsers} />
+      <UserListSection title="External Users" userList={externalUsers} />
     </div>
   );
 }
