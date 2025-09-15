@@ -65,7 +65,6 @@ export const GameAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      console.error('Error fetching games:', error);
       throw error;
     }
   },
@@ -76,7 +75,6 @@ export const GameAPI = {
       if (!res.ok) throw new Error('Failed to fetch game');
       return await res.json();
     } catch (error) {
-      console.error('Error fetching game:', error);
       throw error;
     }
   },
@@ -86,8 +84,6 @@ export const GameAPI = {
       const formattedData = gameData.GameTitle?.S 
         ? gameData 
         : convertToDynamoDBFormat(gameData);
-      
-      console.log('Creating game with data:', formattedData);
       
       const res = await fetch(`${API_BASE}/games`, {
         method: 'POST',
@@ -101,32 +97,21 @@ export const GameAPI = {
         const result = await res.json();
         return result.game;
       }
-      
-      console.error('Failed to create game:', res.status, await res.text());
+    
       return null;
     } catch (error) {
-      console.error('Error creating game:', error);
       throw error;
     }
   },
 
   updateGame: async (gameId: string, gameData: any): Promise<boolean> => {
     try {
-      console.log('=== UPDATE GAME DEBUG ===');
-      console.log('Game ID:', gameId);
-      console.log('Original gameData:', gameData);
-      
       let formattedData;
       if (gameData.GameTitle && typeof gameData.GameTitle === 'object' && gameData.GameTitle.S !== undefined) {
-        console.log('Data is already in DynamoDB format');
         formattedData = gameData;
       } else {
-        console.log('Converting to DynamoDB format');
         formattedData = convertToDynamoDBFormat(gameData);
       }
-      
-      console.log('Formatted data being sent:', JSON.stringify(formattedData, null, 2));
-      console.log('API URL:', `${API_BASE}/games/${gameId}`);
       
       const res = await fetch(`${API_BASE}/games/${gameId}`, {
         method: 'PUT',
@@ -137,32 +122,15 @@ export const GameAPI = {
         body: JSON.stringify(formattedData)
       });
       
-      console.log('Response received:');
-      console.log('- Status:', res.status);
-      console.log('- Status Text:', res.statusText);
-      console.log('- Headers:', Object.fromEntries(res.headers.entries()));
-      
       if (!res.ok) {
         const errorText = await res.text().catch(() => 'Could not read error response');
-        console.error('Update failed. Error response:', errorText);
         throw new Error(`Failed to update game: ${res.status} ${res.statusText}`);
       }
       
       const result = await res.json().catch(() => ({ message: 'Update completed' }));
-      console.log('Update successful. Response:', result);
-      console.log('=== END UPDATE GAME DEBUG ===');
       
       return true;
     } catch (error) {
-      console.error('=== UPDATE GAME ERROR ===');
-      console.error('Error details:', error);
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        console.error('This is likely a CORS error. Check:');
-        console.error('1. API Gateway OPTIONS method is configured');
-        console.error('2. API Gateway has been deployed');
-        console.error('3. Lambda returns CORS headers');
-      }
-      console.error('=== END UPDATE GAME ERROR ===');
       throw error;
     }
   },
@@ -174,7 +142,6 @@ export const GameAPI = {
       });
       return res.ok;
     } catch (error) {
-      console.error('Error deleting game:', error);
       throw error;
     }
   }
@@ -189,7 +156,6 @@ export const CollectionsAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      console.error('Error fetching collections:', error);
       throw error;
     }
   },
@@ -201,7 +167,6 @@ export const CollectionsAPI = {
       const data = await res.json();
       return data;
     } catch (error) {
-      console.error('Error fetching collection:', error);
       throw error;
     }
   },
@@ -221,11 +186,9 @@ export const CollectionsAPI = {
         return result.collection || result;
       } else {
         const errorDetails = await res.text();
-        console.error('Create collection failed:', errorDetails);
         return null;
       }
     } catch (error) {
-      console.error('Error creating collection:', error);
       throw error;
     }
   },
@@ -244,11 +207,9 @@ export const CollectionsAPI = {
         return true;
       } else {
         const errorDetails = await res.text();
-        console.error('Update collection failed:', errorDetails);
         return false;
       }
     } catch (error) {
-      console.error('Error updating collection:', error);
       throw error;
     }
   },
@@ -260,7 +221,6 @@ export const CollectionsAPI = {
       });
       return res.ok;
     } catch (error) {
-      console.error('Error deleting collection:', error);
       throw error;
     }
   },
@@ -272,7 +232,6 @@ export const CollectionsAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      console.error('Error fetching collections by type:', error);
       throw error;
     }
   },
@@ -284,7 +243,6 @@ export const CollectionsAPI = {
       const data = await res.json();
       return Array.isArray(data) ? data : [data];
     } catch (error) {
-      console.error('Error searching collections:', error);
       throw error;
     }
   }
@@ -300,7 +258,6 @@ export const DashboardAPI = {
       if (!res.ok) throw new Error('Failed to fetch dashboard stats');
       return await res.json();
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
       throw error;
     }
   }
@@ -322,7 +279,6 @@ export const UserAPI = {
       if (!res.ok) return null;
       return await res.json();
     } catch (error) {
-      console.error('Error in login API call:', error);
       return null;
     }
   },
@@ -338,7 +294,6 @@ export const UserAPI = {
       if (!res.ok) throw new Error('Failed to fetch users');
       return await res.json();
     } catch (error) {
-      console.error('Error fetching users:', error);
       throw error;
     }
   },
@@ -355,7 +310,6 @@ export const UserAPI = {
       });
       return res.ok ? await res.json() : null;
     } catch (error) {
-      console.error('Error creating user:', error);
       throw error;
     }
   },
@@ -372,7 +326,6 @@ export const UserAPI = {
       });
       return res.ok;
     } catch (error) {
-      console.error('Error updating user:', error);
       throw error;
     }
   },
@@ -387,7 +340,6 @@ export const UserAPI = {
       });
       return res.ok;
     } catch (error) {
-      console.error('Error deleting user:', error);
       throw error;
     }
   }

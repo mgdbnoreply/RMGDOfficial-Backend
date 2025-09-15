@@ -186,5 +186,6 @@ node_modules
 psd
 thumb
 sketch
+functions/
 
 # End of https://www.toptal.com/developers/gitignore/api/node,macos,react

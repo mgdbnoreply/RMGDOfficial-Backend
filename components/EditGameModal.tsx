@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { X, Save, Plus } from 'lucide-react';
 import { Game } from '@/types';
+import ImageUpload from './ImageUpload';
+import { s3Upload } from '@/services/s3Upload';
 
 interface EditGameModalProps {
   game: Game;
@@ -11,7 +13,9 @@ interface EditGameModalProps {
 
 export default function EditGameModal({ game, onSave, onCancel, loading }: EditGameModalProps) {
   const [editData, setEditData] = useState<Game>(game);
-  const [photoInput, setPhotoInput] = useState('');
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [originalImages] = useState<string[]>(game.Photos?.SS || []);
 
   const updateField = (field: keyof Game, value: any) => {
     // Handle string set fields
@@ -29,17 +33,40 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
     }
   };
   
-  const addMedia = (type: 'Photos', input: string, setInput: (val: string) => void) => {
-    if (input.trim()) {
-      const currentMedia = editData[type]?.SS || [];
-      updateField(type, [...currentMedia, input.trim()]);
-      setInput('');
-    }
+  const handleImagesUploaded = (urls: string[]) => {
+    updateField('Photos', urls);
   };
 
-  const removeMedia = (type: 'Photos', index: number) => {
-    const currentMedia = editData[type]?.SS || [];
-    updateField(type, currentMedia.filter((_, i) => i !== index));
+  const handleImagesDeleted = (deletedUrls: string[]) => {
+    setImagesToDelete(deletedUrls);
+  };
+
+  const handleSaveWithImageDeletion = async () => {
+    setIsDeleting(true);
+    
+    try {
+      // Get current images from the edit data
+      const currentImages = editData.Photos?.SS || [];
+      
+      // Identify which images are new (not in original images)
+      const newImages = currentImages.filter(url => !originalImages.includes(url));
+      
+      // Delete images from S3 if any were marked for deletion
+      if (imagesToDelete.length > 0) {
+        const deleteResults = await s3Upload.deleteMultipleImages(imagesToDelete);
+        const failedDeletes = deleteResults.filter(result => !result.success);
+      }
+      
+      // Note: New images are already uploaded to S3 by the ImageUpload component
+      // The ImageUpload component handles the S3 upload when files are selected
+      // So we just need to save the updated game data with the current image URLs
+      
+      onSave(editData);
+    } catch (error) {
+      // Handle error - maybe show a toast notification
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
 
@@ -95,18 +122,16 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
                 {/* Photos */}
                 <div className="space-y-2 mb-4">
                     <label className="block text-sm font-medium text-gray-700">Photos</label>
-                    <div className="flex gap-2">
-                        <input type="url" value={photoInput} onChange={e => setPhotoInput(e.target.value)} placeholder="Add photo URL" className="academic-input flex-1"/>
-                        <button onClick={() => addMedia('Photos', photoInput, setPhotoInput)} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Plus size={16}/></button>
-                    </div>
-                    <div className="space-y-1">
-                        {(editData.Photos?.SS || []).map((url, index) => (
-                            <div key={index} className="flex items-center bg-gray-50 p-2 rounded">
-                                <span className="text-xs truncate flex-1">{url}</span>
-                                <button onClick={() => removeMedia('Photos', index)} className="ml-2 text-red-500 hover:text-red-700"><X size={14}/></button>
-                            </div>
-                        ))}
-                    </div>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Upload new images or keep existing ones.
+                    </p>
+                    <ImageUpload
+                      folder="games"
+                      currentImages={editData.Photos?.SS || []}
+                      onImagesUploaded={handleImagesUploaded}
+                      onImagesDeleted={handleImagesDeleted}
+                      maxImages={5}
+                    />
                 </div>
             </div>
         </div>
@@ -121,12 +146,14 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
               Cancel
             </button>
             <button
-              onClick={() => onSave(editData)}
-              disabled={loading}
+              onClick={handleSaveWithImageDeletion}
+              disabled={loading || isDeleting}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-medium disabled:opacity-50"
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+              <span>
+                {isDeleting ? 'Deleting images...' : loading ? 'Saving...' : 'Save Changes'}
+              </span>
             </button>
           </div>
         </div>
