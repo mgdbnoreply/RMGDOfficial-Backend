@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, Save, Plus } from 'lucide-react';
 import { Game } from '@/types';
 import ImageUpload from './ImageUpload';
@@ -13,11 +13,22 @@ interface EditGameModalProps {
 
 export default function EditGameModal({ game, onSave, onCancel, loading }: EditGameModalProps) {
   const [editData, setEditData] = useState<Game>(game);
-  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [originalImages] = useState<string[]>(game.Photos?.SS || []);
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageData, setImageData] = useState<{
+    currentImages: string[];
+    newFiles: File[];
+    deletedImages: string[];
+  }>({
+    currentImages: game.Photos?.SS || [],
+    newFiles: [],
+    deletedImages: []
+  });
+  
+  const imageUploadRef = useRef<{ uploadPendingFiles: () => Promise<string[]> }>(null);
 
   const updateField = (field: keyof Game, value: any) => {
+    console.log(`🔄 EditGameModal: Updating field ${field} with value:`, value);
+    
     // Handle string set fields
     if (field === 'Photos') {
       setEditData(prev => ({
@@ -33,39 +44,56 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
     }
   };
   
-  const handleImagesUploaded = (urls: string[]) => {
-    updateField('Photos', urls);
+  const handleImagesChanged = (data: { currentImages: string[], newFiles: File[], deletedImages: string[] }) => {
+    console.log('📸 EditGameModal: Images changed:', data);
+    setImageData(data);
   };
 
-  const handleImagesDeleted = (deletedUrls: string[]) => {
-    setImagesToDelete(deletedUrls);
-  };
-
-  const handleSaveWithImageDeletion = async () => {
-    setIsDeleting(true);
+  const handleSaveWithImageUpload = async () => {
+    setIsUploading(true);
     
     try {
-      // Get current images from the edit data
-      const currentImages = editData.Photos?.SS || [];
+      console.log('💾 EditGameModal: Starting save process...');
+      console.log('📸 EditGameModal: Current image data:', imageData);
       
-      // Identify which images are new (not in original images)
-      const newImages = currentImages.filter(url => !originalImages.includes(url));
-      
-      // Delete images from S3 if any were marked for deletion
-      if (imagesToDelete.length > 0) {
-        const deleteResults = await s3Upload.deleteMultipleImages(imagesToDelete);
-        const failedDeletes = deleteResults.filter(result => !result.success);
+      // Step 1: Upload new files to S3
+      let newImageUrls: string[] = [];
+      if (imageData.newFiles.length > 0 && imageUploadRef.current) {
+        console.log('⬆️ EditGameModal: Uploading new files to S3...');
+        newImageUrls = await imageUploadRef.current.uploadPendingFiles();
+        console.log('✅ EditGameModal: New files uploaded:', newImageUrls);
       }
       
-      // Note: New images are already uploaded to S3 by the ImageUpload component
-      // The ImageUpload component handles the S3 upload when files are selected
-      // So we just need to save the updated game data with the current image URLs
+      // Step 2: Delete old images from S3
+      if (imageData.deletedImages.length > 0) {
+        console.log('🗑️ EditGameModal: Deleting images from S3...');
+        const deleteResults = await s3Upload.deleteMultipleImages(imageData.deletedImages);
+        const failedDeletes = deleteResults.filter(result => !result.success);
+        
+        if (failedDeletes.length > 0) {
+          console.warn('⚠️ EditGameModal: Some images failed to delete:', failedDeletes);
+        } else {
+          console.log('✅ EditGameModal: All marked images deleted successfully');
+        }
+      }
       
-      onSave(editData);
+      // Step 3: Combine current images with newly uploaded ones
+      const finalImageUrls = [...imageData.currentImages, ...newImageUrls];
+      console.log('📸 EditGameModal: Final image URLs:', finalImageUrls);
+      
+      // Step 4: Update the game data with final image URLs
+      const updatedGameData = {
+        ...editData,
+        Photos: { SS: finalImageUrls }
+      };
+      
+      console.log('💾 EditGameModal: Calling onSave with updated data...');
+      onSave(updatedGameData);
     } catch (error) {
-      // Handle error - maybe show a toast notification
+      console.error('❌ EditGameModal: Error during save process:', error);
+      alert('Failed to save game. Please try again.');
     } finally {
-      setIsDeleting(false);
+      setIsUploading(false);
     }
   };
 
@@ -126,10 +154,10 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
                       Upload new images or keep existing ones.
                     </p>
                     <ImageUpload
+                      ref={imageUploadRef}
                       folder="games"
-                      currentImages={editData.Photos?.SS || []}
-                      onImagesUploaded={handleImagesUploaded}
-                      onImagesDeleted={handleImagesDeleted}
+                      currentImages={imageData.currentImages}
+                      onImagesChanged={handleImagesChanged}
                       maxImages={5}
                     />
                 </div>
@@ -146,13 +174,13 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
               Cancel
             </button>
             <button
-              onClick={handleSaveWithImageDeletion}
-              disabled={loading || isDeleting}
+              onClick={handleSaveWithImageUpload}
+              disabled={loading || isUploading}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all font-medium disabled:opacity-50"
             >
               <Save className="w-5 h-5" />
               <span>
-                {isDeleting ? 'Deleting images...' : loading ? 'Saving...' : 'Save Changes'}
+                {isUploading ? 'Uploading images...' : loading ? 'Saving...' : 'Save Changes'}
               </span>
             </button>
           </div>

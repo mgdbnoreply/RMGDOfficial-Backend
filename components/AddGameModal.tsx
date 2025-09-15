@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, Save, Plus, Info } from 'lucide-react';
 import { NewGame } from '@/types';
 import ImageUpload from './ImageUpload';
@@ -26,14 +26,55 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
   });
 
   const [validationError, setValidationError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageData, setImageData] = useState<{
+    currentImages: string[];
+    newFiles: File[];
+    deletedImages: string[];
+  }>({
+    currentImages: [],
+    newFiles: [],
+    deletedImages: []
+  });
+
+  const imageUploadRef = useRef<{ uploadPendingFiles: () => Promise<string[]> }>(null);
 
   const handleSubmit = async () => {
     if (!formData.GameTitle.trim() || !formData.Developer.trim()) {
       setValidationError('Game Title and Developer are required fields');
       return;
     }
+    
     setValidationError('');
-    await onSubmit(formData);
+    setIsUploading(true);
+    
+    try {
+      console.log('🎮 AddGameModal: Starting game creation...');
+      console.log('📸 AddGameModal: Current image data:', imageData);
+      
+      // Step 1: Upload new files to S3
+      let uploadedImageUrls: string[] = [];
+      if (imageData.newFiles.length > 0 && imageUploadRef.current) {
+        console.log('⬆️ AddGameModal: Uploading files to S3...');
+        uploadedImageUrls = await imageUploadRef.current.uploadPendingFiles();
+        console.log('✅ AddGameModal: Files uploaded:', uploadedImageUrls);
+      }
+      
+      // Step 2: Create final game data with uploaded image URLs
+      const finalGameData = {
+        ...formData,
+        Photos: uploadedImageUrls
+      };
+      
+      console.log('💾 AddGameModal: Submitting game with data:', finalGameData);
+      await onSubmit(finalGameData);
+      
+    } catch (error) {
+      console.error('❌ AddGameModal: Error during game creation:', error);
+      alert('Failed to create game. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleInputChange = (field: keyof NewGame, value: string | string[]) => {
@@ -43,8 +84,9 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
     }
   };
 
-  const handleImagesUploaded = (urls: string[]) => {
-    handleInputChange('Photos', urls);
+  const handleImagesChanged = (data: { currentImages: string[], newFiles: File[], deletedImages: string[] }) => {
+    console.log('📸 AddGameModal: Images changed:', data);
+    setImageData(data);
   };
   
   const commonGenres = [
@@ -146,9 +188,10 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
             <div className="space-y-2 mb-4">
                 <label className="block text-sm font-medium text-gray-700">Photos</label>
                 <ImageUpload
+                  ref={imageUploadRef}
                   folder="games"
-                  currentImages={formData.Photos || []}
-                  onImagesUploaded={handleImagesUploaded}
+                  currentImages={imageData.currentImages}
+                  onImagesChanged={handleImagesChanged}
                   maxImages={5}
                 />
             </div>
@@ -171,11 +214,13 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || !formData.GameTitle.trim() || !formData.Developer.trim()}
+              disabled={loading || isUploading || !formData.GameTitle.trim() || !formData.Developer.trim()}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Adding Game...' : 'Add to Collection'}</span>
+              <span>
+                {isUploading ? 'Uploading images...' : loading ? 'Adding Game...' : 'Add to Collection'}
+              </span>
             </button>
           </div>
         </div>

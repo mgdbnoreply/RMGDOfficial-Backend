@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { X, Save, Plus, Info, Smartphone } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 
@@ -33,18 +33,52 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
 
   const [specKey, setSpecKey] = useState('');
   const [specValue, setSpecValue] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageData, setImageData] = useState<{
+    currentImages: string[];
+    newFiles: File[];
+    deletedImages: string[];
+  }>({
+    currentImages: [],
+    newFiles: [],
+    deletedImages: []
+  });
+
+  const imageUploadRef = useRef<{ uploadPendingFiles: () => Promise<string[]> }>(null);
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) return;
-    await onSubmit(formData);
+    
+    setIsUploading(true);
+    try {
+      // Upload new files to S3
+      let uploadedImageUrls: string[] = [];
+      if (imageData.newFiles.length > 0 && imageUploadRef.current) {
+        uploadedImageUrls = await imageUploadRef.current.uploadPendingFiles();
+      }
+      
+      // Create final collection data with uploaded image URLs
+      const finalCollectionData = {
+        ...formData,
+        images: uploadedImageUrls
+      };
+      
+      await onSubmit(finalCollectionData);
+    } catch (error) {
+      console.error('Error creating collection:', error);
+      alert('Failed to create collection. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleInputChange = (field: keyof NewCollectionData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImagesUploaded = (urls: string[]) => {
-    setFormData(prev => ({ ...prev, images: urls }));
+  const handleImagesChanged = (data: { currentImages: string[], newFiles: File[], deletedImages: string[] }) => {
+    console.log('📸 AddCollectionModal: Images changed:', data);
+    setImageData(data);
   };
 
   const addSpecification = () => {
@@ -306,9 +340,10 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
                 Upload high-quality images of your collection item. Images will be stored securely in S3.
               </p>
               <ImageUpload
+                ref={imageUploadRef}
                 folder="consoles"
-                currentImages={formData.images}
-                onImagesUploaded={handleImagesUploaded}
+                currentImages={imageData.currentImages}
+                onImagesChanged={handleImagesChanged}
                 maxImages={3}
               />
 
@@ -344,11 +379,13 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || !formData.name.trim()}
+              disabled={loading || isUploading || !formData.name.trim()}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               <Save className="w-5 h-5" />
-              <span>{loading ? 'Adding Device...' : 'Add to Collection'}</span>
+              <span>
+                {isUploading ? 'Uploading images...' : loading ? 'Adding Device...' : 'Add to Collection'}
+              </span>
             </button>
           </div>
         </div>

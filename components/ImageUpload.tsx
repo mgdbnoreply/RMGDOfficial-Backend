@@ -4,11 +4,16 @@ import { s3Upload, UploadResult } from '@/services/s3Upload';
 
 interface ImageUploadProps {
   folder: 'games' | 'consoles';
-  onImagesUploaded: (urls: string[]) => void;
-  onImagesDeleted?: (deletedUrls: string[]) => void;
+  onImagesChanged: (data: { currentImages: string[], newFiles: File[], deletedImages: string[] }) => void;
   currentImages?: string[];
   maxImages?: number;
   className?: string;
+}
+
+interface PendingFile {
+  file: File;
+  previewUrl: string;
+  id: string;
 }
 
 interface UploadingFile {
@@ -19,18 +24,35 @@ interface UploadingFile {
   url?: string;
 }
 
-export default function ImageUpload({ 
+const ImageUpload = React.forwardRef<
+  { uploadPendingFiles: () => Promise<string[]> },
+  ImageUploadProps
+>(({ 
   folder, 
-  onImagesUploaded, 
-  onImagesDeleted,
+  onImagesChanged,
   currentImages = [], 
   maxImages = 5,
   className = ''
-}: ImageUploadProps) {
+}, ref) => {
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [deletedImages, setDeletedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Expose upload method to parent component
+  React.useImperativeHandle(ref, () => ({
+    uploadPendingFiles
+  }));
+
+  // Notify parent component whenever images change
+  const notifyParent = (newCurrentImages: string[], newPendingFiles: PendingFile[], newDeletedImages: string[]) => {
+    onImagesChanged({
+      currentImages: newCurrentImages,
+      newFiles: newPendingFiles.map(pf => pf.file),
+      deletedImages: newDeletedImages
+    });
+  };
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
@@ -56,106 +78,131 @@ export default function ImageUpload({
     if (validFiles.length === 0) return;
 
     // Check if adding these files would exceed the limit
-    const totalImages = currentImages.length + uploadingFiles.length + validFiles.length;
+    const totalImages = currentImages.length + pendingFiles.length + validFiles.length;
     if (totalImages > maxImages) {
       alert(`You can only upload up to ${maxImages} images total.`);
       return;
     }
 
-    uploadFiles(validFiles);
+    addPendingFiles(validFiles);
   };
 
-  const uploadFiles = async (files: File[]) => {
-    const newUploadingFiles: UploadingFile[] = files.map(file => ({
+  const addPendingFiles = (files: File[]) => {
+    const newPendingFiles: PendingFile[] = files.map(file => ({
       file,
+      previewUrl: URL.createObjectURL(file),
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }));
+
+    const updatedPendingFiles = [...pendingFiles, ...newPendingFiles];
+    setPendingFiles(updatedPendingFiles);
+    notifyParent(currentImages, updatedPendingFiles, deletedImages);
+  };
+
+  // Method to upload all pending files (called from parent component)
+  const uploadPendingFiles = async (): Promise<string[]> => {
+    if (pendingFiles.length === 0) return [];
+
+    const newUploadingFiles: UploadingFile[] = pendingFiles.map(pf => ({
+      file: pf.file,
       progress: 0,
       status: 'uploading' as const
     }));
 
-    setUploadingFiles(prev => [...prev, ...newUploadingFiles]);
+    setUploadingFiles(newUploadingFiles);
+    
+    const successfulUploads: string[] = [];
 
     // Upload files one by one
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileIndex = uploadingFiles.length + i;
+    for (let i = 0; i < pendingFiles.length; i++) {
+      const pendingFile = pendingFiles[i];
 
       try {
-        // Update progress to show uploading
+        // Update progress
         setUploadingFiles(prev => 
           prev.map((uploadFile, index) => 
-            index === fileIndex 
-              ? { ...uploadFile, progress: 50 }
-              : uploadFile
+            index === i ? { ...uploadFile, progress: 50 } : uploadFile
           )
         );
 
-        const result: UploadResult = await s3Upload.uploadImage(file, folder);
+        const result: UploadResult = await s3Upload.uploadImage(pendingFile.file, folder);
 
         if (result.success && result.url) {
           // Update to success
           setUploadingFiles(prev => 
             prev.map((uploadFile, index) => 
-              index === fileIndex 
-                ? { 
-                    ...uploadFile, 
-                    progress: 100, 
-                    status: 'success' as const,
-                    url: result.url 
-                  }
-                : uploadFile
+              index === i ? { 
+                ...uploadFile, 
+                progress: 100, 
+                status: 'success' as const,
+                url: result.url 
+              } : uploadFile
             )
           );
 
-          // Add to current images
-          onImagesUploaded([...currentImages, result.url]);
+          successfulUploads.push(result.url);
         } else {
           // Update to error
           setUploadingFiles(prev => 
             prev.map((uploadFile, index) => 
-              index === fileIndex 
-                ? { 
-                    ...uploadFile, 
-                    status: 'error' as const,
-                    error: result.error || 'Upload failed'
-                  }
-                : uploadFile
+              index === i ? { 
+                ...uploadFile, 
+                status: 'error' as const,
+                error: result.error || 'Upload failed'
+              } : uploadFile
             )
           );
         }
       } catch (error) {
         setUploadingFiles(prev => 
           prev.map((uploadFile, index) => 
-            index === fileIndex 
-              ? { 
-                  ...uploadFile, 
-                  status: 'error' as const,
-                  error: error instanceof Error ? error.message : 'Upload failed'
-                }
-              : uploadFile
+            index === i ? { 
+              ...uploadFile, 
+              status: 'error' as const,
+              error: error instanceof Error ? error.message : 'Upload failed'
+            } : uploadFile
           )
         );
       }
     }
 
-    // Clean up completed uploads after a delay
+    // Clear pending files after upload attempt
+    setPendingFiles([]);
+    
+    // Clean up uploading files after a delay
     setTimeout(() => {
-      setUploadingFiles(prev => 
-        prev.filter(file => file.status === 'uploading')
-      );
+      setUploadingFiles([]);
     }, 3000);
+
+    return successfulUploads;
   };
 
   const removeImage = (index: number) => {
-    const imageToDelete = currentImages[index];
-    const newImages = currentImages.filter((_, i) => i !== index);
-    const newDeletedImages = [...deletedImages, imageToDelete];
+    const totalCurrentImages = currentImages.length;
     
-    setDeletedImages(newDeletedImages);
-    onImagesUploaded(newImages);
-    
-    // Notify parent component about deleted images
-    if (onImagesDeleted) {
-      onImagesDeleted(newDeletedImages);
+    if (index < totalCurrentImages) {
+      // Removing from current images (already in S3)
+      const imageToDelete = currentImages[index];
+      const newCurrentImages = currentImages.filter((_, i) => i !== index);
+      const newDeletedImages = [...deletedImages, imageToDelete];
+      
+      console.log('🗑️ ImageUpload: Removing current image:', imageToDelete);
+      
+      setDeletedImages(newDeletedImages);
+      notifyParent(newCurrentImages, pendingFiles, newDeletedImages);
+    } else {
+      // Removing from pending files (not yet uploaded)
+      const pendingIndex = index - totalCurrentImages;
+      const fileToDelete = pendingFiles[pendingIndex];
+      const newPendingFiles = pendingFiles.filter((_, i) => i !== pendingIndex);
+      
+      console.log('🗑️ ImageUpload: Removing pending file:', fileToDelete.file.name);
+      
+      // Clean up object URL to prevent memory leaks
+      URL.revokeObjectURL(fileToDelete.previewUrl);
+      
+      setPendingFiles(newPendingFiles);
+      notifyParent(currentImages, newPendingFiles, deletedImages);
     }
   };
 
@@ -194,7 +241,7 @@ export default function ImageUpload({
             ? 'border-blue-500 bg-blue-50' 
             : 'border-gray-300 hover:border-gray-400'
           }
-          ${currentImages.length + uploadingFiles.length >= maxImages 
+          ${currentImages.length + pendingFiles.length + uploadingFiles.length >= maxImages 
             ? 'opacity-50 cursor-not-allowed' 
             : 'cursor-pointer'
           }
@@ -203,7 +250,7 @@ export default function ImageUpload({
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={currentImages.length + uploadingFiles.length < maxImages ? openFileDialog : undefined}
+        onClick={currentImages.length + pendingFiles.length + uploadingFiles.length < maxImages ? openFileDialog : undefined}
       >
         <input
           ref={fileInputRef}
@@ -212,14 +259,14 @@ export default function ImageUpload({
           accept="image/*"
           onChange={(e) => handleFileSelect(e.target.files)}
           className="hidden"
-          disabled={currentImages.length + uploadingFiles.length >= maxImages}
+          disabled={currentImages.length + pendingFiles.length + uploadingFiles.length >= maxImages}
         />
         
         <div className="space-y-2">
           <Upload className="w-8 h-8 mx-auto text-gray-400" />
           <div>
             <p className="text-sm font-medium text-gray-700">
-              {currentImages.length + uploadingFiles.length >= maxImages
+              {currentImages.length + pendingFiles.length + uploadingFiles.length >= maxImages
                 ? `Maximum ${maxImages} images reached`
                 : 'Click to upload or drag and drop'
               }
@@ -228,21 +275,22 @@ export default function ImageUpload({
               PNG, JPG, GIF, WebP up to 5MB each
             </p>
             <p className="text-xs text-gray-400">
-              {currentImages.length + uploadingFiles.length} of {maxImages} images
+              {currentImages.length + pendingFiles.length + uploadingFiles.length} of {maxImages} images
             </p>
           </div>
         </div>
       </div>
 
-      {/* Current Images */}
-      {currentImages.length > 0 && (
+      {/* All Images (Current + Pending) */}
+      {(currentImages.length > 0 || pendingFiles.length > 0) && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {/* Current Images (already in S3) */}
           {currentImages.map((url, index) => (
-            <div key={index} className="relative group">
+            <div key={`current-${index}`} className="relative group">
               <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                 <img
                   src={url}
-                  alt={`Image ${index + 1}`}
+                  alt={`Current image ${index + 1}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0xMiAxNkM4LjY4NjI5IDE2IDYgMTMuMzEzNyA2IDEwQzYgNi42ODYyOSA4LjY4NjI5IDQgMTIgNEMxNS4zMTM3IDQgMTggNi42ODYyOSAxOCAxMEMxOCAxMy4zMTM3IDE1LjMxMzcgMTYgMTIgMTZaIiBmaWxsPSIjOUM5Qzk3Ii8+CjxwYXRoIGQ9Ik0xMiAxNEMxMy4xMDQ2IDE0IDE0IDEzLjEwNDYgMTQgMTJDMTQgMTAuODk1NCAxMy4xMDQ2IDEwIDEyIDEwQzEwLjg5NTQgMTAgMTAgMTAuODk1NCAxMCAxMkMxMCAxMy4xMDQ2IDEwLjg5NTQgMTQgMTIgMTRaIiBmaWxsPSIjRkZGRkZGIi8+Cjwvc3ZnPgo=';
@@ -251,6 +299,25 @@ export default function ImageUpload({
               </div>
               <button
                 onClick={() => removeImage(index)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          
+          {/* Pending Files (not yet uploaded) */}
+          {pendingFiles.map((pendingFile, index) => (
+            <div key={`pending-${pendingFile.id}`} className="relative group">
+              <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <img
+                  src={pendingFile.previewUrl}
+                  alt={`Pending image ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <button
+                onClick={() => removeImage(currentImages.length + index)}
                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="w-3 h-3" />
@@ -311,27 +378,10 @@ export default function ImageUpload({
         </div>
       )}
 
-      {/* Images Preview Grid for Uploaded Files */}
-      {uploadingFiles.some(f => f.status === 'success' && f.url) && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {uploadingFiles
-            .filter(f => f.status === 'success' && f.url)
-            .map((uploadFile, index) => (
-              <div key={`upload-${index}`} className="relative">
-                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img
-                    src={uploadFile.url}
-                    alt={`Uploaded ${uploadFile.file.name}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute inset-0 bg-green-500/20 rounded-lg flex items-center justify-center">
-                  <Check className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            ))}
-        </div>
-      )}
     </div>
   );
-}
+});
+
+ImageUpload.displayName = 'ImageUpload';
+
+export default ImageUpload;
