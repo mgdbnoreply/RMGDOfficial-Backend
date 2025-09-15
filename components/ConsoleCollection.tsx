@@ -512,7 +512,6 @@ export default function ImprovedConsoleCollection({
         throw new Error('Failed to update collection - API returned false');
       }
     } catch (err: any) {
-      console.error('❌ Update Collection Error:', err);
       setOperationError(`Failed to update collection: ${err.message}`);
     }
   };

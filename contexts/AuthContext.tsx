@@ -47,7 +47,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const fetchedUsers = await UserAPI.getAllUsers();
       setUsers(fetchedUsers);
     } catch (error) {
-      console.error("Failed to fetch user list:", error);
       setUsers([]); // Set to empty array on failure
     }
   };

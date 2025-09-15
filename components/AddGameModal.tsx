@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Save, Plus, Info } from 'lucide-react';
 import { NewGame } from '@/types';
+import ImageUpload from './ImageUpload';
 
 interface AddGameModalProps {
   onSubmit: (game: NewGame & { [key: string]: any }) => Promise<void>;
@@ -24,7 +25,6 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
     Purpose: '',
   });
 
-  const [photoInput, setPhotoInput] = useState('');
   const [validationError, setValidationError] = useState('');
 
   const handleSubmit = async () => {
@@ -43,15 +43,8 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
     }
   };
 
-  const addPhoto = () => {
-    if (photoInput.trim()) {
-      handleInputChange('Photos', [...(formData.Photos || []), photoInput.trim()]);
-      setPhotoInput('');
-    }
-  };
-
-  const removePhoto = (index: number) => {
-    handleInputChange('Photos', (formData.Photos || []).filter((_, i) => i !== index));
+  const handleImagesUploaded = (urls: string[]) => {
+    handleInputChange('Photos', urls);
   };
   
   const commonGenres = [
@@ -152,18 +145,12 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
             {/* Photos */}
             <div className="space-y-2 mb-4">
                 <label className="block text-sm font-medium text-gray-700">Photos</label>
-                <div className="flex gap-2">
-                    <input type="url" value={photoInput} onChange={e => setPhotoInput(e.target.value)} placeholder="Add photo URL" className="academic-input flex-1"/>
-                    <button onClick={addPhoto} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Plus size={16}/></button>
-                </div>
-                <div className="space-y-1">
-                    {(formData.Photos || []).map((url, index) => (
-                        <div key={index} className="flex items-center bg-gray-50 p-2 rounded">
-                            <span className="text-xs truncate flex-1">{url}</span>
-                            <button onClick={() => removePhoto(index)} className="ml-2 text-red-500 hover:text-red-700"><X size={14}/></button>
-                        </div>
-                    ))}
-                </div>
+                <ImageUpload
+                  folder="games"
+                  currentImages={formData.Photos || []}
+                  onImagesUploaded={handleImagesUploaded}
+                  maxImages={5}
+                />
             </div>
           </div>
         </div>

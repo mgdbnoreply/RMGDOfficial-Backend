@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Save, Plus, Info, Smartphone } from 'lucide-react';
+import ImageUpload from './ImageUpload';
 
 interface NewCollectionData {
   name: string;
@@ -30,7 +31,6 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
     specifications: {}
   });
 
-  const [imageInput, setImageInput] = useState('');
   const [specKey, setSpecKey] = useState('');
   const [specValue, setSpecValue] = useState('');
 
@@ -43,21 +43,8 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const addImage = () => {
-    if (imageInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, imageInput.trim()]
-      }));
-      setImageInput('');
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+  const handleImagesUploaded = (urls: string[]) => {
+    setFormData(prev => ({ ...prev, images: urls }));
   };
 
   const addSpecification = () => {
@@ -315,57 +302,16 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
             </h4>
             
             <div className="space-y-4">
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={imageInput}
-                  onChange={(e) => setImageInput(e.target.value)}
-                  className="academic-input flex-1 text-base"
-                  placeholder="Enter image URL"
-                />
-                <button
-                  type="button"
-                  onClick={addImage}
-                  disabled={!imageInput.trim()}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add</span>
-                </button>
-              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                Upload high-quality images of your collection item. Images will be stored securely in S3.
+              </p>
+              <ImageUpload
+                folder="consoles"
+                currentImages={formData.images}
+                onImagesUploaded={handleImagesUploaded}
+                maxImages={3}
+              />
 
-              {formData.images.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Added Images ({formData.images.length})</p>
-                  <div className="grid grid-cols-1 gap-2">
-                    {formData.images.map((url, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                          <div className="w-12 h-12 bg-gray-200 rounded border overflow-hidden flex-shrink-0">
-                            <img
-                              src={url}
-                              alt={`Preview ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                          <span className="text-sm text-gray-700 truncate">{url}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="text-red-600 hover:text-red-800 p-1 ml-2"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
