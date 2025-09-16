@@ -173,6 +173,8 @@ export const CollectionsAPI = {
 
   createCollection: async (collectionData: any): Promise<any | null> => {
     try {
+      console.log('📡 Sending collection data to API:', collectionData);
+      
       const res = await fetch(`${API_BASE}/collections`, {
         method: 'POST',
         headers: { 
@@ -181,14 +183,19 @@ export const CollectionsAPI = {
         body: JSON.stringify(collectionData)
       });
       
+      console.log('📡 API Response status:', res.status, res.statusText);
+      
       if (res.ok) {
         const result = await res.json();
+        console.log('📡 API Response data:', result);
         return result.collection || result;
       } else {
         const errorDetails = await res.text();
-        return null;
+        console.error('📡 API Error details:', errorDetails);
+        throw new Error(`API Error: ${res.status} - ${errorDetails}`);
       }
     } catch (error) {
+      console.error('📡 Network/API Error:', error);
       throw error;
     }
   },
