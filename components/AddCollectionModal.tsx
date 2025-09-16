@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { X, Save, Plus, Info, Smartphone } from 'lucide-react';
+import { X, Save, Info, Smartphone } from 'lucide-react';
 import ImageUpload from './ImageUpload';
 
 interface NewCollectionData {
@@ -8,9 +8,7 @@ interface NewCollectionData {
   description: string;
   manufacturer: string;
   year: string;
-  status: string;
-  images: string[];
-  specifications: Record<string, string>;
+  image: string; // Single image, not array
 }
 
 interface AddCollectionModalProps {
@@ -26,13 +24,9 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
     description: '',
     manufacturer: '',
     year: '',
-    status: 'active',
-    images: [],
-    specifications: {}
+    image: ''
   });
 
-  const [specKey, setSpecKey] = useState('');
-  const [specValue, setSpecValue] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [imageData, setImageData] = useState<{
     currentImages: string[];
@@ -47,23 +41,43 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
   const imageUploadRef = useRef<{ uploadPendingFiles: () => Promise<string[]> }>(null);
 
   const handleSubmit = async () => {
-    if (!formData.name.trim()) return;
+    // Validate required fields
+    if (!formData.name.trim()) {
+      alert('Device name is required');
+      return;
+    }
+    if (!formData.type.trim()) {
+      alert('Device type is required');
+      return;
+    }
+    if (!formData.description.trim()) {
+      alert('Device description is required');
+      return;
+    }
     
     setIsUploading(true);
     try {
-      // Upload new files to S3
-      let uploadedImageUrls: string[] = [];
+      console.log('📱 AddCollectionModal: Starting collection creation...');
+      console.log('📸 AddCollectionModal: Current image data:', imageData);
+      
+      // Step 1: Upload new files to S3 (only if there are files to upload)
+      let uploadedImageUrl = '';
       if (imageData.newFiles.length > 0 && imageUploadRef.current) {
-        uploadedImageUrls = await imageUploadRef.current.uploadPendingFiles();
+        console.log('⬆️ AddCollectionModal: Uploading file to S3...');
+        const uploadedImageUrls = await imageUploadRef.current.uploadPendingFiles();
+        uploadedImageUrl = uploadedImageUrls[0] || ''; // Take the first (and only) image
+        console.log('✅ AddCollectionModal: File uploaded:', uploadedImageUrl);
       }
       
-      // Create final collection data with uploaded image URLs
+      // Step 2: Create final collection data with uploaded image URL
       const finalCollectionData = {
         ...formData,
-        images: uploadedImageUrls
+        image: uploadedImageUrl
       };
       
+      console.log('💾 AddCollectionModal: Submitting collection with data:', finalCollectionData);
       await onSubmit(finalCollectionData);
+      
     } catch (error) {
       console.error('Error creating collection:', error);
     } finally {
@@ -79,27 +93,6 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
     setImageData(data);
   };
 
-  const addSpecification = () => {
-    if (specKey.trim() && specValue.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        specifications: {
-          ...prev.specifications,
-          [specKey.trim()]: specValue.trim()
-        }
-      }));
-      setSpecKey('');
-      setSpecValue('');
-    }
-  };
-
-  const removeSpecification = (key: string) => {
-    setFormData(prev => {
-      const newSpecs = { ...prev.specifications };
-      delete newSpecs[key];
-      return { ...prev, specifications: newSpecs };
-    });
-  };
 
   const deviceTypes = [
     'Handheld Console',
@@ -114,14 +107,6 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
     'Other'
   ];
 
-  const statusOptions = [
-    { value: 'active', label: 'Active' },
-    { value: 'archived', label: 'Archived' },
-    { value: 'maintenance', label: 'Under Maintenance' },
-    { value: 'missing', label: 'Missing' },
-    { value: 'on_loan', label: 'On Loan' },
-    { value: 'damaged', label: 'Damaged' }
-  ];
 
   const commonManufacturers = [
     'Nintendo',
@@ -186,11 +171,14 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
               </div>
               
               <div>
-                <label className="block text-gray-700 text-base font-medium mb-2">Device Type</label>
+                <label className="block text-gray-700 text-base font-medium mb-2">
+                  Device Type <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={formData.type}
                   onChange={(e) => handleInputChange('type', e.target.value)}
                   className="academic-input w-full text-base"
+                  required
                 >
                   <option value="">Select device type</option>
                   {deviceTypes.map(type => (
@@ -199,20 +187,6 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
                 </select>
               </div>
               
-              <div>
-                <label className="block text-gray-700 text-base font-medium mb-2">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="academic-input w-full text-base"
-                >
-                  {statusOptions.map(status => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
               <div>
                 <label className="block text-gray-700 text-base font-medium mb-2">Manufacturer</label>
@@ -256,7 +230,7 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
           <div className="academic-card p-6">
             <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <div className="w-2 h-6 bg-blue-600 rounded mr-3"></div>
-              Device Description
+              Device Description&nbsp;<span className="text-red-500">*</span>
             </h4>
             <textarea
               value={formData.description}
@@ -264,67 +238,10 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
               rows={4}
               className="academic-input w-full text-base"
               placeholder="Detailed description of the device, its specifications, historical significance, notable games, and any unique features..."
+              required
             />
           </div>
 
-          {/* Technical Specifications */}
-          <div className="academic-card p-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <div className="w-2 h-6 bg-purple-600 rounded mr-3"></div>
-              Technical Specifications
-            </h4>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <input
-                  type="text"
-                  value={specKey}
-                  onChange={(e) => setSpecKey(e.target.value)}
-                  className="academic-input text-base"
-                  placeholder="Specification name (e.g., Display, CPU, Memory)"
-                />
-                <input
-                  type="text"
-                  value={specValue}
-                  onChange={(e) => setSpecValue(e.target.value)}
-                  className="academic-input text-base"
-                  placeholder="Specification value"
-                />
-                <button
-                  type="button"
-                  onClick={addSpecification}
-                  disabled={!specKey.trim() || !specValue.trim()}
-                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Spec</span>
-                </button>
-              </div>
-
-              {Object.keys(formData.specifications).length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Added Specifications ({Object.keys(formData.specifications).length})</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {Object.entries(formData.specifications).map(([key, value]) => (
-                      <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900 text-sm">{key}</p>
-                          <p className="text-gray-600 text-sm">{value}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeSpecification(key)}
-                          className="text-red-600 hover:text-red-800 p-1 ml-2"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Visual Documentation */}
           <div className="academic-card p-6">
@@ -335,16 +252,15 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
             
             <div className="space-y-4">
               <p className="text-sm text-gray-600 mb-3">
-                Upload high-quality images of your collection item. Images will be stored securely in S3.
+                Upload a high-quality image of your collection item.
               </p>
               <ImageUpload
                 ref={imageUploadRef}
                 folder="consoles"
                 currentImages={imageData.currentImages}
                 onImagesChanged={handleImagesChanged}
-                maxImages={3}
+                maxImages={1}
               />
-
             </div>
           </div>
 
@@ -377,7 +293,7 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || isUploading || !formData.name.trim()}
+              disabled={loading || isUploading || !formData.name.trim() || !formData.type.trim() || !formData.description.trim()}
               className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-base"
             >
               <Save className="w-5 h-5" />

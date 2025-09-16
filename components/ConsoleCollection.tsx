@@ -448,27 +448,34 @@ export default function ImprovedConsoleCollection({
   const handleAddCollection = async (newCollection: any) => {
     setOperationError(null);
     try {      
-      // Convert to the format expected by the Lambda function (matching actual DB schema)
+      console.log('🚀 Adding collection with data:', newCollection);
+      
       const collectionData = {
         name: newCollection.name,
-        category: newCollection.type,
+        category: newCollection.type, // type -> category
         description: newCollection.description,
-        maker: newCollection.manufacturer || '',
+        maker: newCollection.manufacturer || '', // manufacturer -> maker
         year: newCollection.year || '',
-        image: newCollection.images?.[0] || ''
+        image: newCollection.image || '' // single image field
       };
-
+      
+      console.log('📤 Sending formatted data:', collectionData);
+      
       const createdCollection = await CollectionsAPI.createCollection(collectionData);
+      
+      console.log('✅ Collection created:', createdCollection);
       
       if (createdCollection) {
         // Convert the created collection to display format and add to parent state
         const displayCollection = convertToDisplay(createdCollection);
+        console.log('📝 Display collection:', displayCollection);
         onAddCollection(displayCollection);
         setShowAddForm(false);
       } else {
         throw new Error('Failed to add collection - API returned null');
       }
     } catch (err: any) {
+      console.error('❌ Error adding collection:', err);
       setOperationError(`Failed to add collection: ${err.message}`);
     }
   };
@@ -948,7 +955,7 @@ export default function ImprovedConsoleCollection({
                     placeholder="Search devices, makers, specifications..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="academic-input w-full pl-12 pr-4 text-base placeholder-gray-500"
+                    className="academic-input w-full pl-12 pr-4 text-base placeholder-gray-500 ml-12"
                   />
                 </div>
 
