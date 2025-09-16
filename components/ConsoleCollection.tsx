@@ -450,14 +450,13 @@ export default function ImprovedConsoleCollection({
     try {      
       console.log('🚀 Adding collection with data:', newCollection);
       
-      // Convert frontend data to backend format (matching actual DynamoDB table structure)
       const collectionData = {
         name: newCollection.name,
         category: newCollection.type, // type -> category
         description: newCollection.description,
         maker: newCollection.manufacturer || '', // manufacturer -> maker
         year: newCollection.year || '',
-        image: newCollection.images?.[0] || '' // images array -> single image
+        image: newCollection.image || '' // single image field
       };
       
       console.log('📤 Sending formatted data:', collectionData);
@@ -956,7 +955,7 @@ export default function ImprovedConsoleCollection({
                     placeholder="Search devices, makers, specifications..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="academic-input w-full pl-12 pr-4 text-base placeholder-gray-500"
+                    className="academic-input w-full pl-12 pr-4 text-base placeholder-gray-500 ml-12"
                   />
                 </div>
 

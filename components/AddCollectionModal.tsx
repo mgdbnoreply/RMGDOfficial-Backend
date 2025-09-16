@@ -8,7 +8,7 @@ interface NewCollectionData {
   description: string;
   manufacturer: string;
   year: string;
-  images: string[];
+  image: string; // Single image, not array
 }
 
 interface AddCollectionModalProps {
@@ -24,7 +24,7 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
     description: '',
     manufacturer: '',
     year: '',
-    images: []
+    image: ''
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -57,19 +57,27 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
     
     setIsUploading(true);
     try {
-      // Upload new files to S3
-      let uploadedImageUrls: string[] = [];
+      console.log('📱 AddCollectionModal: Starting collection creation...');
+      console.log('📸 AddCollectionModal: Current image data:', imageData);
+      
+      // Step 1: Upload new files to S3 (only if there are files to upload)
+      let uploadedImageUrl = '';
       if (imageData.newFiles.length > 0 && imageUploadRef.current) {
-        uploadedImageUrls = await imageUploadRef.current.uploadPendingFiles();
+        console.log('⬆️ AddCollectionModal: Uploading file to S3...');
+        const uploadedImageUrls = await imageUploadRef.current.uploadPendingFiles();
+        uploadedImageUrl = uploadedImageUrls[0] || ''; // Take the first (and only) image
+        console.log('✅ AddCollectionModal: File uploaded:', uploadedImageUrl);
       }
       
-      // Create final collection data with uploaded image URLs
+      // Step 2: Create final collection data with uploaded image URL
       const finalCollectionData = {
         ...formData,
-        images: uploadedImageUrls
+        image: uploadedImageUrl
       };
       
+      console.log('💾 AddCollectionModal: Submitting collection with data:', finalCollectionData);
       await onSubmit(finalCollectionData);
+      
     } catch (error) {
       console.error('Error creating collection:', error);
       alert('Failed to create collection. Please try again.');
@@ -246,16 +254,15 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
             
             <div className="space-y-4">
               <p className="text-sm text-gray-600 mb-3">
-                Upload high-quality images of your collection item. Images will be stored securely in S3.
+                Upload a high-quality image of your collection item.
               </p>
               <ImageUpload
                 ref={imageUploadRef}
                 folder="consoles"
                 currentImages={imageData.currentImages}
                 onImagesChanged={handleImagesChanged}
-                maxImages={3}
+                maxImages={1}
               />
-
             </div>
           </div>
 
