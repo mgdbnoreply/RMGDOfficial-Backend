@@ -49,15 +49,10 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
     setIsUploading(true);
     
     try {
-      console.log('🎮 AddGameModal: Starting game creation...');
-      console.log('📸 AddGameModal: Current image data:', imageData);
-      
       // Step 1: Upload new files to S3
       let uploadedImageUrls: string[] = [];
       if (imageData.newFiles.length > 0 && imageUploadRef.current) {
-        console.log('⬆️ AddGameModal: Uploading files to S3...');
         uploadedImageUrls = await imageUploadRef.current.uploadPendingFiles();
-        console.log('✅ AddGameModal: Files uploaded:', uploadedImageUrls);
       }
       
       // Step 2: Create final game data with uploaded image URLs
@@ -66,7 +61,6 @@ export default function AddGameModal({ onSubmit, onCancel, loading }: AddGameMod
         Photos: uploadedImageUrls
       };
       
-      console.log('💾 AddGameModal: Submitting game with data:', finalGameData);
       await onSubmit(finalGameData);
       
     } catch (error) {

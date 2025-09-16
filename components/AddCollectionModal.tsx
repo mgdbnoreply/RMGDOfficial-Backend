@@ -66,7 +66,6 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
       await onSubmit(finalCollectionData);
     } catch (error) {
       console.error('Error creating collection:', error);
-      alert('Failed to create collection. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -77,7 +76,6 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
   };
 
   const handleImagesChanged = (data: { currentImages: string[], newFiles: File[], deletedImages: string[] }) => {
-    console.log('📸 AddCollectionModal: Images changed:', data);
     setImageData(data);
   };
 
