@@ -84,9 +84,6 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
   const handleUpdateGame = async (game: Game) => {
     setOperationError(null);
     try {
-      console.log('🎮 GamesTab: handleUpdateGame received game:', game);
-      console.log('📸 GamesTab: Photos from game:', game.Photos?.SS);
-      
       // Convert DynamoDB format to simple JavaScript objects
       const gameData = {
         GameTitle: game.GameTitle?.S || '',
@@ -102,9 +99,6 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
         Players: (game as any).Players?.S || '',
         Purpose: (game as any).Purpose?.S || '',
       };
-
-      console.log('📤 GamesTab: Sending gameData to API:', gameData);
-      console.log('📸 GamesTab: Photos being sent:', gameData.Photos);
 
       const success = await GameAPI.updateGame(game.GameID.S, gameData);
       

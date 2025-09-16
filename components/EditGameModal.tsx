@@ -27,7 +27,6 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
   const imageUploadRef = useRef<{ uploadPendingFiles: () => Promise<string[]> }>(null);
 
   const updateField = (field: keyof Game, value: any) => {
-    console.log(`🔄 EditGameModal: Updating field ${field} with value:`, value);
     
     // Handle string set fields
     if (field === 'Photos') {
@@ -45,41 +44,27 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
   };
   
   const handleImagesChanged = (data: { currentImages: string[], newFiles: File[], deletedImages: string[] }) => {
-    console.log('📸 EditGameModal: Images changed:', data);
     setImageData(data);
   };
 
   const handleSaveWithImageUpload = async () => {
     setIsUploading(true);
     
-    try {
-      console.log('💾 EditGameModal: Starting save process...');
-      console.log('📸 EditGameModal: Current image data:', imageData);
-      
+    try {      
       // Step 1: Upload new files to S3
       let newImageUrls: string[] = [];
       if (imageData.newFiles.length > 0 && imageUploadRef.current) {
-        console.log('⬆️ EditGameModal: Uploading new files to S3...');
         newImageUrls = await imageUploadRef.current.uploadPendingFiles();
-        console.log('✅ EditGameModal: New files uploaded:', newImageUrls);
       }
       
       // Step 2: Delete old images from S3
       if (imageData.deletedImages.length > 0) {
-        console.log('🗑️ EditGameModal: Deleting images from S3...');
         const deleteResults = await s3Upload.deleteMultipleImages(imageData.deletedImages);
         const failedDeletes = deleteResults.filter(result => !result.success);
-        
-        if (failedDeletes.length > 0) {
-          console.warn('⚠️ EditGameModal: Some images failed to delete:', failedDeletes);
-        } else {
-          console.log('✅ EditGameModal: All marked images deleted successfully');
-        }
       }
       
       // Step 3: Combine current images with newly uploaded ones
       const finalImageUrls = [...imageData.currentImages, ...newImageUrls];
-      console.log('📸 EditGameModal: Final image URLs:', finalImageUrls);
       
       // Step 4: Update the game data with final image URLs
       const updatedGameData = {
@@ -87,11 +72,9 @@ export default function EditGameModal({ game, onSave, onCancel, loading }: EditG
         Photos: { SS: finalImageUrls }
       };
       
-      console.log('💾 EditGameModal: Calling onSave with updated data...');
       onSave(updatedGameData);
     } catch (error) {
       console.error('❌ EditGameModal: Error during save process:', error);
-      alert('Failed to save game. Please try again.');
     } finally {
       setIsUploading(false);
     }

@@ -186,8 +186,6 @@ const ImageUpload = React.forwardRef<
       const newCurrentImages = currentImages.filter((_, i) => i !== index);
       const newDeletedImages = [...deletedImages, imageToDelete];
       
-      console.log('🗑️ ImageUpload: Removing current image:', imageToDelete);
-      
       setDeletedImages(newDeletedImages);
       notifyParent(newCurrentImages, pendingFiles, newDeletedImages);
     } else {
@@ -195,8 +193,6 @@ const ImageUpload = React.forwardRef<
       const pendingIndex = index - totalCurrentImages;
       const fileToDelete = pendingFiles[pendingIndex];
       const newPendingFiles = pendingFiles.filter((_, i) => i !== pendingIndex);
-      
-      console.log('🗑️ ImageUpload: Removing pending file:', fileToDelete.file.name);
       
       // Clean up object URL to prevent memory leaks
       URL.revokeObjectURL(fileToDelete.previewUrl);
