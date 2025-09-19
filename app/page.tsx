@@ -44,7 +44,7 @@ function DashboardContent() {
         // Set default tab based on role and fetch data accordingly
         if (user?.role === 'user') {
             setActiveTab('user_dashboard');
-            // User-specific data would be fetched here
+            fetchAllGames(); // Also fetch games for the user dashboard
         } else { // Admin and Researcher
             setActiveTab('games');
             fetchAllGames();
@@ -260,7 +260,13 @@ function DashboardContent() {
             {/* ROLE-BASED RENDERING */}
             {activeTab === 'profile' && <ProfileSettings />}
 
-            {user?.role === 'user' && activeTab !== 'profile' && <UserDashboard />}
+            {user?.role === 'user' && activeTab !== 'profile' && (
+              <UserDashboard 
+                games={games} 
+                user={user} 
+                onAddGame={handleAddGame} 
+              />
+            )}
 
             {(user?.role === 'admin' || user?.role === 'researcher') && (
               <>
@@ -295,7 +301,12 @@ function DashboardContent() {
                 <>
                     {activeTab === 'admin' && <AdminTab />}
                     {activeTab === 'users' && <UserManagement />}
-                    {activeTab === 'approvals' && <AdminApprovalQueue />}
+                    {activeTab === 'approvals' && (
+                      <AdminApprovalQueue 
+                        games={games} 
+                        onUpdateGame={handleUpdateGame}
+                      />
+                    )}
                 </>
             )}
           </div>

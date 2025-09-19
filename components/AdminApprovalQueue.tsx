@@ -6,33 +6,31 @@ import { GameAPI } from '@/services/api';
 import { Game } from '@/types';
 import GameDetailModal from './GameDetailModal';
 
-export default function AdminApprovalQueue() {
+interface AdminApprovalQueueProps {
+  games: Game[];
+  onUpdateGame: (updatedGame: Game) => void;
+}
+
+export default function AdminApprovalQueue({ games, onUpdateGame }: AdminApprovalQueueProps) {
     const [pendingGames, setPendingGames] = useState<Game[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
     useEffect(() => {
-        const fetchPendingGames = async () => {
-            try {
-                const allGames = await GameAPI.getAllGames();
-                const pending = allGames.filter(game => game.Status?.S === 'pending');
-                setPendingGames(pending);
-            } catch (error) {
-                console.error("Failed to fetch pending games:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchPendingGames();
-    }, []);
+        const pending = games.filter(game => game.Status?.S === 'pending');
+        setPendingGames(pending);
+        setIsLoading(false);
+    }, [games]);
 
     const handleApprove = async (gameId: string) => {
         setActionLoading(prev => ({ ...prev, [gameId]: true }));
         const success = await GameAPI.updateGameStatus(gameId, 'approved');
         if (success) {
-            setPendingGames(prev => prev.filter(game => game.GameID.S !== gameId));
+            const updatedGame = games.find(g => g.GameID.S === gameId);
+            if (updatedGame) {
+                onUpdateGame({ ...updatedGame, Status: { S: 'approved' } });
+            }
             setSelectedGame(null);
         } else {
             alert('Failed to approve the game. Please try again.');
@@ -44,7 +42,10 @@ export default function AdminApprovalQueue() {
         setActionLoading(prev => ({ ...prev, [gameId]: true }));
         const success = await GameAPI.updateGameStatus(gameId, 'rejected');
         if (success) {
-            setPendingGames(prev => prev.filter(game => game.GameID.S !== gameId));
+            const updatedGame = games.find(g => g.GameID.S === gameId);
+            if (updatedGame) {
+                onUpdateGame({ ...updatedGame, Status: { S: 'rejected' } });
+            }
             setSelectedGame(null);
         } else {
             alert('Failed to reject the game. Please try again.');

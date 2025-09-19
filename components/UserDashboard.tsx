@@ -8,57 +8,33 @@ import { NewGame, Game } from '@/types';
 import AddGameModal from './AddGameModal';
 import GameCard from './GameCard';
 
-interface GameSubmission extends Game {
-    submissionId: string;
-    status: 'pending' | 'approved' | 'rejected';
-    submittedAt: string;
+interface UserDashboardProps {
+    games: Game[];
+    user: any;
+    onAddGame: (newGame: Game) => void;
 }
 
-export default function UserDashboard() {
-    const { user } = useAuth();
-    const [submissions, setSubmissions] = useState<GameSubmission[]>([]);
+export default function UserDashboard({ games, user, onAddGame }: UserDashboardProps) {
+    const [submissions, setSubmissions] = useState<Game[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showSubmitForm, setShowSubmitForm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        const fetchSubmissions = async () => {
-            if (user) {
-                try {
-                    const allGames = await GameAPI.getAllGames();
-                    const userSubmissions = allGames
-                        .filter(game => game.Developer?.S === user.name)
-                        .map(game => ({
-                            ...game,
-                            submissionId: game.GameID.S,
-                            status: game.Status?.S || 'pending',
-                            submittedAt: new Date().toISOString()
-                        }));
-                    setSubmissions(userSubmissions);
-                } catch (error) {
-                    console.error("Failed to fetch submissions:", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchSubmissions();
-    }, [user]);
+        if (user && games) {
+            const userSubmissions = games.filter(game => game.Developer?.S === user.name);
+            setSubmissions(userSubmissions);
+            setIsLoading(false);
+        }
+    }, [user, games]);
 
     const handleSubmitGame = async (newGame: NewGame) => {
         if (!newGame.GameTitle || !user) return;
         setIsSubmitting(true);
         try {
-            const createdGame = await GameAPI.createGame({ ...newGame, Developer: user.name });
+            const createdGame = await GameAPI.createGame({ ...newGame, Developer: user.name, Status: 'pending' });
             if (createdGame) {
-                const newSubmission: GameSubmission = {
-                    ...createdGame,
-                    submissionId: createdGame.GameID.S,
-                    status: 'pending',
-                    submittedAt: new Date().toISOString()
-                };
-                setSubmissions(prev => [newSubmission, ...prev]);
+                onAddGame(createdGame);
                 setShowSubmitForm(false);
             }
         } finally {
@@ -66,7 +42,7 @@ export default function UserDashboard() {
         }
     };
 
-    const getStatusChip = (status: 'pending' | 'approved' | 'rejected') => {
+    const getStatusChip = (status?: 'pending' | 'approved' | 'rejected') => {
         const baseClasses = "flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium";
         switch (status) {
             case 'pending':
@@ -75,6 +51,8 @@ export default function UserDashboard() {
                 return <div className={`${baseClasses} bg-green-100 text-green-800`}><Check className="w-4 h-4" /><span>Approved</span></div>;
             case 'rejected':
                 return <div className={`${baseClasses} bg-red-100 text-red-800`}><X className="w-4 h-4" /><span>Rejected</span></div>;
+            default:
+                return <div className={`${baseClasses} bg-gray-100 text-gray-800`}><Clock className="w-4 h-4" /><span>Status Unknown</span></div>;
         }
     };
 
@@ -109,7 +87,7 @@ export default function UserDashboard() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {submissions.map(submission => (
-                                <div key={submission.submissionId} className="relative">
+                                <div key={submission.GameID.S} className="relative">
                                     <GameCard
                                         game={submission}
                                         viewMode="grid"
@@ -118,7 +96,7 @@ export default function UserDashboard() {
                                         onDelete={() => {}}
                                     />
                                     <div className="absolute top-4 right-4">
-                                        {getStatusChip(submission.status)}
+                                        {getStatusChip(submission.Status?.S)}
                                     </div>
                                 </div>
                             ))}
