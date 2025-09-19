@@ -1,14 +1,16 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Check, X, User, Calendar, Loader2 } from 'lucide-react';
+import { Check, X, User, Calendar, Loader2, Eye } from 'lucide-react';
 import { GameAPI } from '@/services/api';
 import { Game } from '@/types';
+import GameDetailModal from './GameDetailModal';
 
 export default function AdminApprovalQueue() {
     const [pendingGames, setPendingGames] = useState<Game[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
     useEffect(() => {
         const fetchPendingGames = async () => {
@@ -31,6 +33,7 @@ export default function AdminApprovalQueue() {
         const success = await GameAPI.updateGameStatus(gameId, 'approved');
         if (success) {
             setPendingGames(prev => prev.filter(game => game.GameID.S !== gameId));
+            setSelectedGame(null);
         }
         setActionLoading(prev => ({ ...prev, [gameId]: false }));
     };
@@ -40,6 +43,7 @@ export default function AdminApprovalQueue() {
         const success = await GameAPI.updateGameStatus(gameId, 'rejected');
         if (success) {
             setPendingGames(prev => prev.filter(game => game.GameID.S !== gameId));
+            setSelectedGame(null);
         }
         setActionLoading(prev => ({ ...prev, [gameId]: false }));
     };
@@ -59,6 +63,9 @@ export default function AdminApprovalQueue() {
                                 </div>
                             </div>
                             <div className="flex items-center space-x-3">
+                                <button onClick={() => setSelectedGame(game)} className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                                    <Eye className="w-5 h-5" />
+                                </button>
                                 <button onClick={() => handleReject(game.GameID.S)} disabled={actionLoading[game.GameID.S]} className="p-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50">
                                     {actionLoading[game.GameID.S] ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
                                 </button>
@@ -72,6 +79,15 @@ export default function AdminApprovalQueue() {
                 ))}
                 {pendingGames.length === 0 && !isLoading && <p className="text-gray-500 text-center py-8">The approval queue is empty. Great job!</p>}
             </div>
+
+            {selectedGame && (
+                <GameDetailModal
+                    game={selectedGame}
+                    onClose={() => setSelectedGame(null)}
+                    onEdit={() => {}}
+                    onDelete={() => {}}
+                />
+            )}
         </div>
     );
 }

@@ -4,11 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Clock, Check, X, Edit2, Send, Loader2 } from 'lucide-react';
 import ProfileSettings from './ProfileSettings'; // Import the new component
 import { GameAPI } from '@/services/api';
-import { NewGame } from '@/types';
+import { NewGame, Game } from '@/types';
+import AddGameModal from './AddGameModal';
+import GameCard from './GameCard';
 
-interface GameSubmission {
+interface GameSubmission extends Game {
     submissionId: string;
-    GameTitle: string;
     status: 'pending' | 'approved' | 'rejected';
     submittedAt: string;
 }
@@ -18,34 +19,47 @@ export default function UserDashboard() {
     const [submissions, setSubmissions] = useState<GameSubmission[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showSubmitForm, setShowSubmitForm] = useState(false);
-    const [newGame, setNewGame] = useState<NewGame>({ GameTitle: '', Developer: '', YearDeveloped: '', Genre: '', GameDescription: '', Status: 'pending' });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        const mockSubmissions: GameSubmission[] = [
-            { submissionId: 'sub1', GameTitle: 'Snake II', status: 'approved', submittedAt: new Date(Date.now() - 86400000 * 5).toISOString() },
-            { submissionId: 'sub2', GameTitle: 'Space Impact', status: 'pending', submittedAt: new Date(Date.now() - 86400000 * 2).toISOString() },
-            { submissionId: 'sub3', GameTitle: 'Bantumi', status: 'rejected', submittedAt: new Date(Date.now() - 86400000 * 10).toISOString() },
-        ];
-        setSubmissions(mockSubmissions);
-        setIsLoading(false);
+        const fetchSubmissions = async () => {
+            if (user) {
+                try {
+                    const allGames = await GameAPI.getAllGames();
+                    const userSubmissions = allGames
+                        .filter(game => game.Developer?.S === user.name)
+                        .map(game => ({
+                            ...game,
+                            submissionId: game.GameID.S,
+                            status: game.Status?.S || 'pending',
+                            submittedAt: new Date().toISOString()
+                        }));
+                    setSubmissions(userSubmissions);
+                } catch (error) {
+                    console.error("Failed to fetch submissions:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchSubmissions();
     }, [user]);
 
-    const handleSubmitGame = async () => {
+    const handleSubmitGame = async (newGame: NewGame) => {
         if (!newGame.GameTitle || !user) return;
         setIsSubmitting(true);
         try {
-            const createdGame = await GameAPI.createGame(newGame);
+            const createdGame = await GameAPI.createGame({ ...newGame, Developer: user.name });
             if (createdGame) {
                 const newSubmission: GameSubmission = {
+                    ...createdGame,
                     submissionId: createdGame.GameID.S,
-                    GameTitle: createdGame.GameTitle.S,
                     status: 'pending',
                     submittedAt: new Date().toISOString()
                 };
                 setSubmissions(prev => [newSubmission, ...prev]);
                 setShowSubmitForm(false);
-                setNewGame({ GameTitle: '', Developer: '', YearDeveloped: '', Genre: '', GameDescription: '', Status: 'pending' });
             }
         } finally {
             setIsSubmitting(false);
@@ -66,7 +80,6 @@ export default function UserDashboard() {
 
     return (
         <div className="space-y-8">
-            {/* ADDED PROFILE SETTINGS FOR THE USER */}
             <ProfileSettings />
 
             <div className="academic-card-elevated p-8">
@@ -75,65 +88,44 @@ export default function UserDashboard() {
                         <h2 className="text-2xl font-bold text-primary">My Contributions</h2>
                         <p className="text-secondary text-lg">Submit games and see their approval status.</p>
                     </div>
-                    <button onClick={() => setShowSubmitForm(!showSubmitForm)} className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium shadow-lg">
+                    <button onClick={() => setShowSubmitForm(true)} className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium shadow-lg">
                         <Plus className="w-5 h-5" />
-                        <span>{showSubmitForm ? 'Cancel Submission' : 'Submit a Game'}</span>
+                        <span>Submit a Game</span>
                     </button>
                 </div>
 
                 {showSubmitForm && (
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input
-                                type="text"
-                                placeholder="Game Title"
-                                value={newGame.GameTitle}
-                                onChange={(e) => setNewGame({ ...newGame, GameTitle: e.target.value })}
-                                className="academic-input w-full"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Developer"
-                                value={newGame.Developer}
-                                onChange={(e) => setNewGame({ ...newGame, Developer: e.target.value })}
-                                className="academic-input w-full"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Year Developed"
-                                value={newGame.YearDeveloped}
-                                onChange={(e) => setNewGame({ ...newGame, YearDeveloped: e.target.value })}
-                                className="academic-input w-full"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Genre"
-                                value={newGame.Genre}
-                                onChange={(e) => setNewGame({ ...newGame, Genre: e.target.value })}
-                                className="academic-input w-full"
-                            />
-                            <textarea
-                                placeholder="Game Description"
-                                value={newGame.GameDescription}
-                                onChange={(e) => setNewGame({ ...newGame, GameDescription: e.target.value })}
-                                className="academic-input w-full md:col-span-2"
-                                rows={4}
-                            />
-                        </div>
-                        <div className="flex justify-end mt-4">
-                            <button
-                                onClick={handleSubmitGame}
-                                disabled={isSubmitting}
-                                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium shadow-lg"
-                            >
-                                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                <span>{isSubmitting ? 'Submitting...' : 'Submit for Review'}</span>
-                            </button>
-                        </div>
-                    </div>
+                    <AddGameModal
+                        onSubmit={handleSubmitGame}
+                        onCancel={() => setShowSubmitForm(false)}
+                        loading={isSubmitting}
+                    />
                 )}
+
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h3 className="text-xl font-bold text-gray-800 mb-4">My Submissions</h3>
+                    {isLoading ? (
+                        <p>Loading submissions...</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {submissions.map(submission => (
+                                <div key={submission.submissionId} className="relative">
+                                    <GameCard
+                                        game={submission}
+                                        viewMode="grid"
+                                        onEdit={() => {}}
+                                        onView={() => {}}
+                                        onDelete={() => {}}
+                                    />
+                                    <div className="absolute top-4 right-4">
+                                        {getStatusChip(submission.status)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-            {/* The rest of the component JSX remains the same */}
         </div>
     );
 }
