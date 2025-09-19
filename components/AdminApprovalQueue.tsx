@@ -63,15 +63,9 @@ export default function AdminApprovalQueue() {
                                 </div>
                             </div>
                             <div className="flex items-center space-x-3">
-                                <button onClick={() => setSelectedGame(game)} className="p-3 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                                <button onClick={() => setSelectedGame(game)} className="flex items-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                                     <Eye className="w-5 h-5" />
-                                </button>
-                                <button onClick={() => handleReject(game.GameID.S)} disabled={actionLoading[game.GameID.S]} className="p-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50">
-                                    {actionLoading[game.GameID.S] ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
-                                </button>
-                                <button onClick={() => handleApprove(game.GameID.S)} disabled={actionLoading[game.GameID.S]} className="flex items-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50">
-                                    {actionLoading[game.GameID.S] ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                                    <span>{actionLoading[game.GameID.S] ? 'Working...' : 'Approve'}</span>
+                                    <span>Review</span>
                                 </button>
                             </div>
                         </div>
@@ -84,8 +78,9 @@ export default function AdminApprovalQueue() {
                 <GameDetailModal
                     game={selectedGame}
                     onClose={() => setSelectedGame(null)}
-                    onEdit={() => {}}
-                    onDelete={() => {}}
+                    onApprove={handleApprove}
+                    onReject={handleReject}
+                    isApprovalQueue={true}
                 />
             )}
         </div>

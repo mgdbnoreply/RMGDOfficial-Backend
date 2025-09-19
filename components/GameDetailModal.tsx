@@ -1,11 +1,14 @@
-import { X, Edit2, Trash2, Calendar, Tag, Users, Image, Hash, Tv, Gamepad, Globe, Cpu, Wifi, Users2, Building, DollarSign, Code, Info, PlayCircle } from 'lucide-react';
+import { X, Edit2, Trash2, Calendar, Tag, Users, Image, Hash, Tv, Gamepad, Globe, Cpu, Wifi, Users2, Building, DollarSign, Code, Info, PlayCircle, Check } from 'lucide-react';
 import { Game } from '@/types';
 
 interface GameDetailModalProps {
   game: Game;
   onClose: () => void;
-  onEdit: (game: Game) => void;
-  onDelete: (gameId: string) => void;
+  onEdit?: (game: Game) => void;
+  onDelete?: (gameId: string) => void;
+  onApprove?: (gameId: string) => void;
+  onReject?: (gameId: string) => void;
+  isApprovalQueue?: boolean;
 }
 
 // A helper to render detail items consistently
@@ -22,7 +25,7 @@ const DetailItem = ({ icon: Icon, label, value }: { icon: React.ElementType, lab
     );
 };
 
-export default function GameDetailModal({ game, onClose, onEdit, onDelete }: GameDetailModalProps) {
+export default function GameDetailModal({ game, onClose, onEdit, onDelete, onApprove, onReject, isApprovalQueue }: GameDetailModalProps) {
   const getGenreColor = (genre: string) => {
     // ... same color logic as before
     const colors: { [key: string]: string } = {
@@ -124,25 +127,49 @@ export default function GameDetailModal({ game, onClose, onEdit, onDelete }: Gam
               )}
 
               {/* Actions */}
-              <div className="academic-card p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
-                <div className="space-y-3">
-                  <button
-                    onClick={() => { onEdit(game); onClose(); }}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                    <span>Edit Game</span>
-                  </button>
-                  <button
-                    onClick={() => { onDelete(game.GameID?.S); onClose(); }}
-                    className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                    <span>Delete Game</span>
-                  </button>
-                </div>
-              </div>
+              {(onEdit || onDelete || onApprove || onReject) && (
+                  <div className="academic-card p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+                      <div className="space-y-3">
+                          {isApprovalQueue && onApprove && onReject && (
+                              <>
+                                  <button
+                                      onClick={() => { onApprove(game.GameID?.S); onClose(); }}
+                                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium"
+                                  >
+                                      <Check className="w-5 h-5" />
+                                      <span>Approve</span>
+                                  </button>
+                                  <button
+                                      onClick={() => { onReject(game.GameID?.S); onClose(); }}
+                                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium"
+                                  >
+                                      <X className="w-5 h-5" />
+                                      <span>Reject</span>
+                                  </button>
+                              </>
+                          )}
+                          {!isApprovalQueue && onEdit && onDelete && (
+                              <>
+                                  <button
+                                      onClick={() => { onEdit(game); onClose(); }}
+                                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all font-medium"
+                                  >
+                                      <Edit2 className="w-5 h-5" />
+                                      <span>Edit Game</span>
+                                  </button>
+                                  <button
+                                      onClick={() => { onDelete(game.GameID?.S); onClose(); }}
+                                      className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium"
+                                  >
+                                      <Trash2 className="w-5 h-5" />
+                                      <span>Delete Game</span>
+                                  </button>
+                              </>
+                          )}
+                      </div>
+                  </div>
+              )}
 
                {/* Game ID */}
               <div className="academic-card p-4">
