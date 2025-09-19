@@ -148,12 +148,12 @@ export const GameAPI = {
   
   updateGameStatus: async (gameId: string, status: 'approved' | 'rejected'): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_BASE}/games/${gameId}/status`, {
+      const res = await fetch(`${API_BASE}/games/${gameId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ Status: { S: status } }),
       });
       return res.ok;
     } catch (error) {
