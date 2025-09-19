@@ -34,6 +34,8 @@ export default function AdminApprovalQueue() {
         if (success) {
             setPendingGames(prev => prev.filter(game => game.GameID.S !== gameId));
             setSelectedGame(null);
+        } else {
+            alert('Failed to approve the game. Please try again.');
         }
         setActionLoading(prev => ({ ...prev, [gameId]: false }));
     };
@@ -44,6 +46,8 @@ export default function AdminApprovalQueue() {
         if (success) {
             setPendingGames(prev => prev.filter(game => game.GameID.S !== gameId));
             setSelectedGame(null);
+        } else {
+            alert('Failed to reject the game. Please try again.');
         }
         setActionLoading(prev => ({ ...prev, [gameId]: false }));
     };

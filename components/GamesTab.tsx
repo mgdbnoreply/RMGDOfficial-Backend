@@ -29,14 +29,14 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState('catalog');
-  const approvedGames = games.filter(game => game.Status?.S === 'approved');
+  const displayableGames = games.filter(game => game.Status?.S !== 'rejected');
 
   useEffect(() => {
     filterGames();
   }, [games, searchTerm, selectedGenre, selectedYear, selectedEra]);
 
   const filterGames = () => {
-    let filtered = approvedGames;
+    let filtered = displayableGames;
 
     if (searchTerm) {
       filtered = filtered.filter(game =>
@@ -153,38 +153,38 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
   };
 
   // Data processing for research insights
-  const uniqueGenres = Array.from(new Set(approvedGames.map(g => g.Genre?.S).filter(Boolean))).sort();
-  const uniqueYears = Array.from(new Set(approvedGames.map(g => g.YearDeveloped?.S).filter(Boolean))).sort().reverse();
-  const uniqueDevelopers = Array.from(new Set(approvedGames.map(g => g.Developer?.S).filter(Boolean))).sort();
+  const uniqueGenres = Array.from(new Set(displayableGames.map(g => g.Genre?.S).filter(Boolean))).sort();
+  const uniqueYears = Array.from(new Set(displayableGames.map(g => g.YearDeveloped?.S).filter(Boolean))).sort().reverse();
+  const uniqueDevelopers = Array.from(new Set(displayableGames.map(g => g.Developer?.S).filter(Boolean))).sort();
 
   const eraData = {
-    'Early Era': approvedGames.filter(g => {
+    'Early Era': displayableGames.filter(g => {
       const year = parseInt(g.YearDeveloped?.S || '0');
       return year >= 1975 && year <= 1989;
     }),
-    'Golden Age': approvedGames.filter(g => {
+    'Golden Age': displayableGames.filter(g => {
       const year = parseInt(g.YearDeveloped?.S || '0');
       return year >= 1990 && year <= 1999;
     }),
-    'Modern Era': approvedGames.filter(g => {
+    'Modern Era': displayableGames.filter(g => {
       const year = parseInt(g.YearDeveloped?.S || '0');
       return year >= 2000 && year <= 2008;
     })
   };
 
   const stats = {
-    totalGames: approvedGames.length,
+    totalGames: displayableGames.length,
     developers: uniqueDevelopers.length,
     genres: uniqueGenres.length,
-    recentGames: approvedGames.filter(g => parseInt(g.YearDeveloped?.S || '0') >= 2000).length,
-    documentedGames: approvedGames.filter(g => g.Photos?.SS?.length > 0).length,
-    avgYear: Math.round(approvedGames.reduce((sum, g) => sum + parseInt(g.YearDeveloped?.S || '0'), 0) / approvedGames.length),
+    recentGames: displayableGames.filter(g => parseInt(g.YearDeveloped?.S || '0') >= 2000).length,
+    documentedGames: displayableGames.filter(g => g.Photos?.SS?.length > 0).length,
+    avgYear: Math.round(displayableGames.reduce((sum, g) => sum + parseInt(g.YearDeveloped?.S || '0'), 0) / displayableGames.length),
     topGenre: uniqueGenres.reduce((max, genre) => {
-      const count = approvedGames.filter(g => g.Genre?.S === genre).length;
+      const count = displayableGames.filter(g => g.Genre?.S === genre).length;
       return count > max.count ? { name: genre, count } : max;
     }, { name: '', count: 0 }),
     topDeveloper: uniqueDevelopers.reduce((max, dev) => {
-      const count = approvedGames.filter(g => g.Developer?.S === dev).length;
+      const count = displayableGames.filter(g => g.Developer?.S === dev).length;
       return count > max.count ? { name: dev, count } : max;
     }, { name: '', count: 0 })
   };
@@ -450,8 +450,8 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
           </h3>
           <div className="space-y-4 max-h-96 overflow-y-auto">
             {uniqueYears.map((year) => {
-              const yearGames = approvedGames.filter(g => g.YearDeveloped?.S === year);
-              const maxCount = Math.max(...uniqueYears.map(y => approvedGames.filter(g => g.YearDeveloped?.S === y).length));
+              const yearGames = displayableGames.filter(g => g.YearDeveloped?.S === year);
+              const maxCount = Math.max(...uniqueYears.map(y => displayableGames.filter(g => g.YearDeveloped?.S === y).length));
               return (
                 <div key={year} className="flex items-center space-x-6 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors">
                   <div className="w-20 text-center">
@@ -646,7 +646,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
               {(searchTerm || selectedGenre || selectedYear || selectedEra) && (
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Filter className="w-4 h-4" />
-                  <span>Showing {filteredGames.length} of {approvedGames.length} games</span>
+                  <span>Showing {filteredGames.length} of {displayableGames.length} games</span>
                 </div>
               )}
             </div>
