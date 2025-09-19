@@ -144,6 +144,22 @@ export const GameAPI = {
     } catch (error) {
       throw error;
     }
+  },
+  
+  updateGameStatus: async (gameId: string, status: 'approved' | 'rejected'): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/games/${gameId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+      return res.ok;
+    } catch (error) {
+      console.error("Failed to update game status:", error);
+      return false;
+    }
   }
 };
 
@@ -173,7 +189,7 @@ export const CollectionsAPI = {
 
   createCollection: async (collectionData: any): Promise<any | null> => {
     try {
-      console.log('📡 Sending collection data to API:', collectionData);
+      console.log('藤 Sending collection data to API:', collectionData);
       
       const res = await fetch(`${API_BASE}/collections`, {
         method: 'POST',
@@ -183,19 +199,19 @@ export const CollectionsAPI = {
         body: JSON.stringify(collectionData)
       });
       
-      console.log('📡 API Response status:', res.status, res.statusText);
+      console.log('藤 API Response status:', res.status, res.statusText);
       
       if (res.ok) {
         const result = await res.json();
-        console.log('📡 API Response data:', result);
+        console.log('藤 API Response data:', result);
         return result.collection || result;
       } else {
         const errorDetails = await res.text();
-        console.error('📡 API Error details:', errorDetails);
+        console.error('藤 API Error details:', errorDetails);
         throw new Error(`API Error: ${res.status} - ${errorDetails}`);
       }
     } catch (error) {
-      console.error('📡 Network/API Error:', error);
+      console.error('藤 Network/API Error:', error);
       throw error;
     }
   },

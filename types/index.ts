@@ -15,6 +15,7 @@ export type Game = {
   HardwareFeatures?: { S: string };
   Players?: { S: string };
   Purpose?: { S: string };
+  Status?: { S: 'pending' | 'approved' | 'rejected' }; // Added status
   [key: string]: unknown;
 };
 
@@ -32,6 +33,7 @@ export type NewGame = {
   HardwareFeatures?: string;
   Players?: string;
   Purpose?: string;
+  Status?: 'pending' | 'approved' | 'rejected'; // Added status
 };
 
 export type DashboardStats = {
