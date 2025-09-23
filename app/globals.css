@@ -166,3 +166,13 @@ select:focus-visible {
 .text-xl { font-size: 1.25rem; } /* 20px */
 .text-2xl { font-size: 1.5rem; } /* 24px */
 .text-3xl { font-size: 1.875rem; } /* 30px */
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
