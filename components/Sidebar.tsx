@@ -9,10 +9,6 @@ import {
   LogOut, 
   User,
   Database,
-  Clock,
-  Users,
-  ChevronDown,
-  ChevronRight,
   CheckSquare
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,10 +20,9 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [showUserManagement, setShowUserManagement] = useState(false);
-  const { user, logout, users } = useAuth();
+  const { user, logout } = useAuth();
 
-  const baseMenuItems = [
+  const baseMenuItems = useMemo(() => [
     {
       id: 'games',
       label: 'Game Collection',
@@ -76,7 +71,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       icon: User,
       description: 'Update your profile settings'
     }
-  ];
+  ], []);
 
   const menuItems = useMemo(() => {
     if (!user) return [];
@@ -89,14 +84,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         return items.sort((a, b) => a.label.localeCompare(b.label));
       case 'researcher':
         return baseMenuItems.filter(item => 
-          item.id === 'games' || item.id === 'console' || item.id === 'analytics' || item.id === 'profile'
+          ['games', 'console', 'analytics', 'profile'].includes(item.id)
         );
       case 'user':
-        return baseMenuItems.filter(item => item.id === 'user-dashboard' || item.id === 'profile');
+        return baseMenuItems.filter(item => ['user-dashboard', 'profile'].includes(item.id));
       default:
         return [];
     }
-  }, [user]);
+  }, [user, baseMenuItems]);
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to logout?')) {
@@ -114,8 +109,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar - Keep Red */}
-      <div className={`fixed left-0 top-0 h-full sidebar-bg z-50 transition-all duration-300 shadow-xl ${
+      {/* Sidebar Container */}
+      {/* CHANGE: Added 'flex flex-col' to ensure proper layout of children */}
+      <div className={`fixed left-0 top-0 h-full sidebar-bg z-50 transition-all duration-300 shadow-xl flex flex-col ${
         isCollapsed ? '-translate-x-full lg:translate-x-0 lg:w-20' : 'w-80 lg:w-80'
       }`}>
         
@@ -146,24 +142,21 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         {/* User Info */}
         {!isCollapsed && (
           <div className="p-4 border-b border-red-700/30">
-            <div className="space-y-3">
-              {/* Current User */}
-              <div className="sidebar-card p-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium text-white truncate">{user?.name || user?.email}</p>
-                    <p className="text-sm text-red-100 capitalize">{user?.role} Access</p>
-                  </div>
+            <div className="sidebar-card p-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-medium text-white truncate">{user?.name || user?.email}</p>
+                  <p className="text-sm text-red-100 capitalize">{user?.role} Access</p>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Navigation */}
+        {/* Navigation (This part will scroll) */}
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {menuItems.map((item) => (
             <button
@@ -193,8 +186,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className={`absolute bottom-0 w-full p-4 border-t border-red-700/30 ${isCollapsed ? 'hidden lg:block' : ''}`}>
+        {/* Footer (This part stays at the bottom) */}
+        {/* CHANGE: Removed 'absolute bottom-0' and added 'flex-shrink-0' to keep it from collapsing */}
+        <div className={`flex-shrink-0 p-4 border-t border-red-700/30 ${isCollapsed ? 'hidden lg:block' : ''}`}>
            <button
               onClick={handleLogout}
               className="w-full flex items-center justify-center space-x-3 p-3 text-red-100 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
@@ -203,7 +197,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               {!isCollapsed && <span className="font-medium text-base">Logout</span>}
             </button>
         </div>
-
       </div>
 
       {/* Mobile Menu Button */}
