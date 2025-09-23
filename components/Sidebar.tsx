@@ -9,9 +9,10 @@ import {
   LogOut, 
   User,
   Database,
-  CheckSquare
+  CheckSquare,
+  Users
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -110,7 +111,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       )}
 
       {/* Sidebar Container */}
-      {/* CHANGE: Added 'flex flex-col' to ensure proper layout of children */}
       <div className={`fixed left-0 top-0 h-full sidebar-bg z-50 transition-all duration-300 shadow-xl flex flex-col ${
         isCollapsed ? '-translate-x-full lg:translate-x-0 lg:w-20' : 'w-80 lg:w-80'
       }`}>
@@ -187,7 +187,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </nav>
 
         {/* Footer (This part stays at the bottom) */}
-        {/* CHANGE: Removed 'absolute bottom-0' and added 'flex-shrink-0' to keep it from collapsing */}
         <div className={`flex-shrink-0 p-4 border-t border-red-700/30 ${isCollapsed ? 'hidden lg:block' : ''}`}>
            <button
               onClick={handleLogout}
@@ -211,3 +210,4 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     </>
   );
 }
+
