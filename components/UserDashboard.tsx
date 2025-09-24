@@ -58,7 +58,7 @@ export default function UserDashboard({ games, user, onAddGame }: UserDashboardP
 
     return (
         <div className="space-y-8">
-            <ProfileSettings />
+            {/* <ProfileSettings /> */}
 
             <div className="academic-card-elevated p-8">
                 <div className="flex items-center justify-between">
