@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock } from 'lucide-react';
+import { Users, Plus, Edit2, Trash2, Save, X, UserPlus, Shield, Clock, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserManagement() {
@@ -14,9 +14,9 @@ export default function UserManagement() {
   });
   const [editData, setEditData] = useState({ name: '', role: '' });
 
-
-  const internalUsers = users.filter(u => u.role === 'admin' || u.role === 'Admin' || u.role === 'researcher');
-  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'Admin' && u.role !== 'researcher');
+  const pendingUsers = users.filter(u => u.status === 'pending');
+  const internalUsers = users.filter(u => (u.role === 'admin' || u.role === 'Admin' || u.role === 'researcher') && u.status !== 'pending');
+  const externalUsers = users.filter(u => u.role !== 'admin' && u.role !== 'Admin' && u.role !== 'researcher' && u.status !== 'pending');
 
   const handleAddUser = async () => {
     if (!newUser.Email.trim() || !newUser.Name.trim()) return;
@@ -57,6 +57,10 @@ export default function UserManagement() {
 
     await updateUser(userId, payload);
     setEditingUser(null);
+  };
+
+  const handleUpdateUserStatus = async (userId: string, status: 'approved' | 'rejected') => {
+    await updateUser(userId, { Status: status });
   };
 
   const startEditing = (user: typeof users[0]) => {
@@ -319,6 +323,31 @@ export default function UserManagement() {
               <span>Add User</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Approval Queue */}
+      {pendingUsers.length > 0 && (
+        <div className="academic-card-elevated p-8">
+            <h3 className="text-xl font-bold text-primary mb-6">Approval Queue ({pendingUsers.length})</h3>
+            <div className="space-y-4">
+                {pendingUsers.map((u) => (
+                    <div key={u.id} className="bg-yellow-50 border-l-4 border-yellow-400 p-4 flex items-center justify-between">
+                        <div>
+                            <p className="font-semibold text-yellow-800">{u.name}</p>
+                            <p className="text-sm text-yellow-700">{u.email}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <button onClick={() => handleUpdateUserStatus(u.id, 'approved')} className="p-2 bg-green-100 text-green-600 rounded-md hover:bg-green-200">
+                                <Check className="w-5 h-5" />
+                            </button>
+                            <button onClick={() => handleUpdateUserStatus(u.id, 'rejected')} className="p-2 bg-red-100 text-red-600 rounded-md hover:bg-red-200">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
       )}
 

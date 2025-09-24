@@ -324,7 +324,7 @@ export const UserAPI = {
   /**
    * Calls the POST /user endpoint to create a new user.
    */
-  createUser: async (userData: { Name: string; Email: string; Role: string }): Promise<any | null> => {
+  createUser: async (userData: { Name: string; Email: string; Role: string; Password?: string; Status: string }): Promise<any | null> => {
     try {
       const res = await fetch(`${API_BASE}/user`, {
         method: 'POST',
@@ -340,7 +340,7 @@ export const UserAPI = {
   /**
    * Calls the PUT /user/{UserID} endpoint to update a user.
    */
-  updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string }): Promise<boolean> => {
+  updateUser: async (userId: string, userData: { Name?: string; Role?: string; Password?: string; Status?: string }): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE}/user/${userId}`, {
         method: 'PUT',
