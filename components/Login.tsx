@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Eye, EyeOff, Gamepad2, AlertCircle, Loader2, Shield, User, BookOpen } from 'lucide-react';
+import { Eye, EyeOff, Gamepad2, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateAccountModal from './CreateAccountModal'; // Import the new component
 
@@ -28,19 +28,6 @@ export default function Login() {
       setError('Unable to connect to the server. Please try again later.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = (role: 'admin' | 'researcher' | 'user') => {
-    if (role === 'admin') {
-      setEmail('parkar.ar@northeastern.edu');
-      setPassword('ib2026ib');
-    } else if (role === 'researcher') {
-      setEmail('researcher@rmgd.org');
-      setPassword('researcher');
-    } else if (role === 'user') {
-      setEmail('user@rmgd.org');
-      setPassword('user');
     }
   };
 
@@ -171,40 +158,6 @@ export default function Login() {
               >
                 Don't have an account? Create one
               </button>
-            </div>
-
-            {/* Demo Credentials */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-700 text-center mb-4">Quick Logins (Demo)</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* Admin Button */}
-                  <button
-                      type="button"
-                      onClick={() => handleDemoLogin('admin')}
-                      className="flex flex-col items-center justify-center space-y-2 p-4 bg-red-50 text-red-700 rounded-xl border-2 border-red-100 hover:border-red-400 hover:bg-red-100 transition-all"
-                  >
-                      <Shield className="w-6 h-6" />
-                      <span className="font-semibold text-sm">Admin</span>
-                  </button>
-                  {/* Researcher Button */}
-                  <button
-                      type="button"
-                      onClick={() => handleDemoLogin('researcher')}
-                      className="flex flex-col items-center justify-center space-y-2 p-4 bg-blue-50 text-blue-700 rounded-xl border-2 border-blue-100 hover:border-blue-400 hover:bg-blue-100 transition-all"
-                  >
-                      <BookOpen className="w-6 h-6" />
-                      <span className="font-semibold text-sm">Researcher</span>
-                  </button>
-                  {/* User Button */}
-                  <button
-                      type="button"
-                      onClick={() => handleDemoLogin('user')}
-                      className="flex flex-col items-center justify-center space-y-2 p-4 bg-green-50 text-green-700 rounded-xl border-2 border-green-100 hover:border-green-400 hover:bg-green-100 transition-all"
-                  >
-                      <User className="w-6 h-6" />
-                      <span className="font-semibold text-sm">User</span>
-                  </button>
-              </div>
             </div>
 
             {/* Footer */}

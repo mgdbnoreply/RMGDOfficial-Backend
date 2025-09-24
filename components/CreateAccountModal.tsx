@@ -12,7 +12,6 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('user'); // Added role state
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,17 +35,16 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
     setLoading(true);
 
     try {
-      // Pass all necessary fields to addUser
-      const success = await addUser({ Name: name, Email: email, Password: password, Role: role, Status: 'pending' });
+      // Pass all necessary fields to addUser, with a default role of 'user'
+      const success = await addUser({ Name: name, Email: email, Password: password, Role: 'user', Status: 'pending' });
       if (success) {
-        setSuccess('Account created successfully! An administrator will review your request.');
+        setSuccess('Welcome! Your account has been created successfully. An administrator will review your request shortly.');
         setName('');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        setRole('user');
       } else {
-        setError('Failed to create account. Please try again.');
+        setError('Failed to create account. This email may already be in use.');
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again later.');
@@ -60,7 +58,7 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         <div className="p-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Create Your RMGD Account</h2>
             <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600">
               <X />
             </button>
@@ -76,19 +74,21 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="academic-input w-full"
+                placeholder="Enter your full name"
                 required
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email-create" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
               </label>
               <input
-                id="email"
+                id="email-create"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="academic-input w-full"
+                placeholder="Enter your email"
                 required
               />
             </div>
@@ -102,6 +102,7 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="academic-input w-full"
+                placeholder="Minimum 8 characters"
                 required
               />
             </div>
@@ -115,22 +116,9 @@ export default function CreateAccountModal({ onClose }: CreateAccountModalProps)
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="academic-input w-full"
+                placeholder="Re-enter your password"
                 required
               />
-            </div>
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                Role
-              </label>
-              <select
-                id="role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="academic-input w-full"
-              >
-                <option value="user">User</option>
-                <option value="researcher">Researcher</option>
-              </select>
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
             {success && <p className="text-green-500 text-sm">{success}</p>}
