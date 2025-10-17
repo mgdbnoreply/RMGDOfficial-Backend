@@ -7,9 +7,10 @@ interface GameCardProps {
   onEdit: (game: Game) => void;
   onView: (game: Game) => void;
   onDelete: (gameId: string) => void;
+  hideActions?: boolean; // Optional prop to hide action buttons
 }
 
-export default function GameCard({ game, viewMode, onEdit, onView, onDelete }: GameCardProps) {
+export default function GameCard({ game, viewMode, onEdit, onView, onDelete, hideActions = false }: GameCardProps) {
   const getGenreColor = (genre: string) => {
     const colors: Record<string, string> = {
       'Action': 'bg-red-100 text-red-800 border-red-200',
@@ -53,29 +54,31 @@ export default function GameCard({ game, viewMode, onEdit, onView, onDelete }: G
                 </div>
               </div>
               
-              <div className="flex space-x-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => onView(game)}
-                  className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-                  title="View Details"
-                >
-                  <Eye className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onEdit(game)}
-                  className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all"
-                  title="Edit Game"
-                >
-                  <Edit2 className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onDelete(game.GameID?.S)}
-                  className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                  title="Delete Game"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
+              {!hideActions && (
+                <div className="flex space-x-2 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => onView(game)}
+                    className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                    title="View Details"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => onEdit(game)}
+                    className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all"
+                    title="Edit Game"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(game.GameID?.S)}
+                    className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                    title="Delete Game"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
             
             <p className="text-gray-600 text-base mb-4 leading-relaxed line-clamp-2">
@@ -125,29 +128,31 @@ export default function GameCard({ game, viewMode, onEdit, onView, onDelete }: G
           </div>
         </div>
         
-        <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => onView(game)}
-            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-            title="View Details"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onEdit(game)}
-            className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all"
-            title="Edit Game"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onDelete(game.GameID?.S)}
-            className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-            title="Delete Game"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
+        {!hideActions && (
+          <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => onView(game)}
+              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+              title="View Details"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onEdit(game)}
+              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-lg transition-all"
+              title="Edit Game"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onDelete(game.GameID?.S)}
+              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+              title="Delete Game"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       <p className="text-gray-600 text-base mb-4 leading-relaxed line-clamp-3">

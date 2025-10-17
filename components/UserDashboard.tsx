@@ -7,6 +7,7 @@ import { GameAPI } from '@/services/api';
 import { NewGame, Game } from '@/types';
 import AddGameModal from './AddGameModal';
 import GameCard from './GameCard';
+import GameDetailModal from './GameDetailModal';
 
 interface UserDashboardProps {
     games: Game[];
@@ -19,10 +20,12 @@ export default function UserDashboard({ games, user, onAddGame }: UserDashboardP
     const [isLoading, setIsLoading] = useState(true);
     const [showSubmitForm, setShowSubmitForm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
     useEffect(() => {
         if (user && games) {
-            const userSubmissions = games.filter(game => game.SubmittedBy?.S === user.name);
+            // Filter by email (unique identifier) instead of name
+            const userSubmissions = games.filter(game => game.SubmittedBy?.S === user.email);
             setSubmissions(userSubmissions);
             setIsLoading(false);
         }
@@ -35,7 +38,8 @@ export default function UserDashboard({ games, user, onAddGame }: UserDashboardP
             const createdGame = await GameAPI.createGame({ 
                 ...newGame, 
                 Status: 'pending',
-                SubmittedBy: user.name 
+                SubmittedBy: user.email, // Use email as unique identifier
+                SubmittedByName: user.name // Store name separately for display
             });
             if (createdGame) {
                 onAddGame(createdGame);
@@ -96,8 +100,9 @@ export default function UserDashboard({ games, user, onAddGame }: UserDashboardP
                                         game={submission}
                                         viewMode="grid"
                                         onEdit={() => {}}
-                                        onView={() => {}}
+                                        onView={setSelectedGame}
                                         onDelete={() => {}}
+                                        hideActions={true}
                                     />
                                     <div className="absolute top-4 right-4">
                                         {getStatusChip(submission.Status?.S)}
@@ -108,6 +113,14 @@ export default function UserDashboard({ games, user, onAddGame }: UserDashboardP
                     )}
                 </div>
             </div>
+
+            {/* Game Detail Modal */}
+            {selectedGame && (
+                <GameDetailModal 
+                    game={selectedGame} 
+                    onClose={() => setSelectedGame(null)}
+                />
+            )}
         </div>
     );
 }
