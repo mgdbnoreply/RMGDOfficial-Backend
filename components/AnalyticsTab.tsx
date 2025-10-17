@@ -16,6 +16,7 @@ import {
   Archive
 } from 'lucide-react';
 import { GameAPI, CollectionsAPI } from '@/services/api'; // Adjust path as needed
+import { useAuth } from '@/contexts/AuthContext';
 
 // Type definitions
 interface Game {
@@ -214,6 +215,7 @@ const StatsCard = ({ title, value, icon: Icon, color, iconColor, textColor }: {
 // }
 
 export default function ResearchDashboard() {
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('overview');
   const [games, setGames] = useState<Game[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -228,7 +230,17 @@ export default function ResearchDashboard() {
           CollectionsAPI.getAllCollections()
         ]);
         
-        setGames(Array.isArray(gamesData) ? gamesData : []);
+        // Only approved games should be included in analytics for ALL roles
+        // This ensures consistent data across the application
+        const filteredGames = Array.isArray(gamesData) ? gamesData.filter(game => {
+          // ALL users (including admins) only see approved games in analytics
+          // This maintains data consistency with the main collection
+          // Legacy games without Status.S field are treated as approved for backward compatibility
+          const status = game.Status?.S;
+          return status === 'approved' || status === undefined;
+        }) : [];
+        
+        setGames(filteredGames);
         setCollections(Array.isArray(collectionsData) ? collectionsData : []);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -238,7 +250,7 @@ export default function ResearchDashboard() {
     };
 
     fetchData();
-  }, []);
+  }, [user]);
 
   // Process collections data safely - handle DynamoDB format
   const processedCollections = collections.map((item: any) => ({

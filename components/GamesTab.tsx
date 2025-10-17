@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Plus, Gamepad2, Users, BarChart3, Calendar, Grid, List, AlertCircle, Filter, Download, BookOpen, Clock, Trophy, Zap, Star, Archive, TrendingUp } from 'lucide-react';
 import { Game, NewGame } from '@/types';
 import { GameAPI } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import GameCard from './GameCard';
 import AddGameModal from './AddGameModal';
 import GameDetailModal from './GameDetailModal';
@@ -18,6 +19,7 @@ interface GamesTabProps {
 }
 
 export default function ImprovedGamesTab({ games, loading, error, onRefresh, onUpdateGame, onAddGame, onDeleteGame }: GamesTabProps) {
+  const { user } = useAuth();
   const [filteredGames, setFilteredGames] = useState<Game[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
@@ -29,11 +31,20 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState('catalog');
-  const displayableGames = games.filter(game => game.Status?.S !== 'rejected');
+  
+  // Only approved games should be displayed in the main collection for ALL roles
+  // Pending games are managed through the Admin Approval Queue
+  const displayableGames = games.filter(game => {
+    // ALL users (including admins) only see approved games in the main collection
+    // Admins manage pending games through the separate Approval Queue
+    // Legacy games without Status.S field are treated as approved for backward compatibility
+    const status = game.Status?.S;
+    return status === 'approved' || status === undefined;
+  });
 
   useEffect(() => {
     filterGames();
-  }, [games, searchTerm, selectedGenre, selectedYear, selectedEra]);
+  }, [games, searchTerm, selectedGenre, selectedYear, selectedEra, user]);
 
   const filterGames = () => {
     let filtered = displayableGames;
@@ -68,7 +79,13 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
   const handleAddGame = async (gameData: NewGame & { [key: string]: any }) => {
     setOperationError(null);
     try {
-      const createdGame = await GameAPI.createGame(gameData);
+      // When admin adds games directly, they should be approved immediately
+      const gameDataWithStatus = {
+        ...gameData,
+        Status: user?.role === 'admin' ? 'approved' : 'pending'
+      };
+      
+      const createdGame = await GameAPI.createGame(gameDataWithStatus);
       
       if (createdGame) {
         // Add to local state instead of full refresh
@@ -251,13 +268,15 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
               </div>
               <p className="text-green-700 text-sm mt-1">Last sync: 2 minutes ago</p>
             </div>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium shadow-lg text-base"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Add Game</span>
-            </button>
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl hover:from-red-700 hover:to-red-800 transition-all font-medium shadow-lg text-base"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Add Game</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -346,7 +365,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
                   </div>
                   <h4 className="font-bold text-gray-900 text-lg mb-2">{era}</h4>
                   <p className="text-gray-600 mb-3">
-                    {stats.totalGames > 0 ? Math.round((gamesInEra.length / games.length) * 100) : 0}% of collection
+                    {stats.totalGames > 0 ? Math.round((gamesInEra.length / stats.totalGames) * 100) : 0}% of collection
                   </p>
                   <div className="bg-gray-200 rounded-full h-2 mb-2">
                     <div 
@@ -355,7 +374,7 @@ export default function ImprovedGamesTab({ games, loading, error, onRefresh, onU
                         idx === 1 ? 'bg-red-500' :
                         'bg-blue-500'
                       }`}
-                      style={{ width: `${stats.totalGames > 0 ? (gamesInEra.length / games.length) * 100 : 0}%` }}
+                      style={{ width: `${stats.totalGames > 0 ? (gamesInEra.length / stats.totalGames) * 100 : 0}%` }}
                     />
                   </div>
                   <p className="text-sm text-gray-500">

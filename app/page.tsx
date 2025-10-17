@@ -39,6 +39,12 @@ function DashboardContent() {
   const [collectionsError, setCollectionsError] = useState<string | null>(null);
   const { user, isAuthenticated, loading: authLoading } = useAuth();
 
+  // Filter to count only approved and legacy games (excluding pending/rejected)
+  const approvedGamesCount = games.filter(game => {
+    const status = game.Status?.S;
+    return status === 'approved' || status === undefined;
+  }).length;
+
   useEffect(() => {
     if (isAuthenticated) {
         // Set default tab based on role and fetch data accordingly
@@ -238,7 +244,7 @@ function DashboardContent() {
             <div className="text-right">
               <div className="academic-card-elevated p-6">
                 <p className="text-primary text-lg font-semibold">
-                  {games.length} Games Catalogued
+                  {approvedGamesCount} Games Catalogued
                 </p>
                 <div className="flex items-center justify-end space-x-2 mt-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>

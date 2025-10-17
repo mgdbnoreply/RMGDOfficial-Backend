@@ -147,7 +147,7 @@ export default function AddCollectionModal({ onSubmit, onCancel, loading }: AddC
           </div>
         </div>
 
-        <div className="p-6 space-y-8">
+        <div className="p-6 space-y-6">
           {/* Basic Information */}
           <div className="academic-card p-6">
             <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
