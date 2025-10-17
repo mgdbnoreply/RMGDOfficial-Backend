@@ -9,9 +9,10 @@ import GameDetailModal from './GameDetailModal';
 interface AdminApprovalQueueProps {
   games: Game[];
   onUpdateGame: (updatedGame: Game) => void;
+  onDeleteGame: (gameId: string) => void;
 }
 
-export default function AdminApprovalQueue({ games, onUpdateGame }: AdminApprovalQueueProps) {
+export default function AdminApprovalQueue({ games, onUpdateGame, onDeleteGame }: AdminApprovalQueueProps) {
     const [pendingGames, setPendingGames] = useState<Game[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
@@ -40,12 +41,9 @@ export default function AdminApprovalQueue({ games, onUpdateGame }: AdminApprova
 
     const handleReject = async (gameId: string) => {
         setActionLoading(prev => ({ ...prev, [gameId]: true }));
-        const success = await GameAPI.updateGameStatus(gameId, 'rejected');
+        const success = await GameAPI.deleteGame(gameId);
         if (success) {
-            const updatedGame = games.find(g => g.GameID.S === gameId);
-            if (updatedGame) {
-                onUpdateGame({ ...updatedGame, Status: { S: 'rejected' } });
-            }
+            onDeleteGame(gameId);
             setSelectedGame(null);
         } else {
             alert('Failed to reject the game. Please try again.');

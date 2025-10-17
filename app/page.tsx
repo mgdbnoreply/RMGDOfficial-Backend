@@ -311,6 +311,7 @@ function DashboardContent() {
                       <AdminApprovalQueue 
                         games={games} 
                         onUpdateGame={handleUpdateGame}
+                        onDeleteGame={handleDeleteGame}
                       />
                     )}
                 </>
