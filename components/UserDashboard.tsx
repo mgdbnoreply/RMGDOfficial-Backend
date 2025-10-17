@@ -22,7 +22,7 @@ export default function UserDashboard({ games, user, onAddGame }: UserDashboardP
 
     useEffect(() => {
         if (user && games) {
-            const userSubmissions = games.filter(game => game.Developer?.S === user.name);
+            const userSubmissions = games.filter(game => game.SubmittedBy?.S === user.name);
             setSubmissions(userSubmissions);
             setIsLoading(false);
         }
@@ -32,7 +32,11 @@ export default function UserDashboard({ games, user, onAddGame }: UserDashboardP
         if (!newGame.GameTitle || !user) return;
         setIsSubmitting(true);
         try {
-            const createdGame = await GameAPI.createGame({ ...newGame, Developer: user.name, Status: 'pending' });
+            const createdGame = await GameAPI.createGame({ 
+                ...newGame, 
+                Status: 'pending',
+                SubmittedBy: user.name 
+            });
             if (createdGame) {
                 onAddGame(createdGame);
                 setShowSubmitForm(false);

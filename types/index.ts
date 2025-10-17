@@ -16,6 +16,7 @@ export type Game = {
   Players?: { S: string };
   Purpose?: { S: string };
   Status?: { S: 'pending' | 'approved' | 'rejected' }; // Added status
+  SubmittedBy?: { S: string }; // Track who submitted the game
   [key: string]: unknown;
 };
 
@@ -34,6 +35,7 @@ export type NewGame = {
   Players?: string;
   Purpose?: string;
   Status?: 'pending' | 'approved' | 'rejected'; // Added status
+  SubmittedBy?: string; // Track who submitted the game
 };
 
 export type DashboardStats = {
