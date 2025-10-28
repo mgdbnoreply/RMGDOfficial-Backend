@@ -41,14 +41,30 @@ export default function AdminApprovalQueue({ games, onUpdateGame, onDeleteGame }
 
     const handleReject = async (gameId: string) => {
         setActionLoading(prev => ({ ...prev, [gameId]: true }));
-        const success = await GameAPI.deleteGame(gameId);
-        if (success) {
-            onDeleteGame(gameId);
-            setSelectedGame(null);
-        } else {
+        try {
+            // First temporarily update status to trigger email
+            const game = games.find(g => g.GameID.S === gameId);
+            if (!game) {
+                throw new Error('Game not found');
+            }
+
+            // Update status to rejected (this will trigger the email)
+            await GameAPI.updateGameStatus(gameId, 'rejected');
+
+            // Then delete the game
+            const deleteSuccess = await GameAPI.deleteGame(gameId);
+            if (deleteSuccess) {
+                onDeleteGame(gameId);
+                setSelectedGame(null);
+            } else {
+                throw new Error('Failed to delete game');
+            }
+        } catch (error) {
+            console.error('Error rejecting game:', error);
             alert('Failed to reject the game. Please try again.');
+        } finally {
+            setActionLoading(prev => ({ ...prev, [gameId]: false }));
         }
-        setActionLoading(prev => ({ ...prev, [gameId]: false }));
     };
 
     return (
