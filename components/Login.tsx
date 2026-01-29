@@ -1,6 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { Eye, EyeOff, Gamepad2, AlertCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Gamepad2, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateAccountModal from './CreateAccountModal'; // Import the new component
 
@@ -33,7 +33,7 @@ export default function Login() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0" style={{
@@ -41,7 +41,112 @@ export default function Login() {
           }} />
         </div>
 
-        <div className="w-full max-w-md relative">
+        <div className="max-w-6xl mx-auto">
+          {/* Info Cards Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {/* General Users Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-blue-100 p-8 hover:shadow-xl transition-shadow">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <Gamepad2 className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">For Game Contributors</h3>
+              </div>
+              <div className="space-y-4 text-gray-700">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-blue-600 font-semibold text-sm">1</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Create Your Account</p>
+                    <p className="text-sm text-gray-600">Click "Create one" and fill in your details to register</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-blue-600 font-semibold text-sm">2</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Wait for Approval</p>
+                    <p className="text-sm text-gray-600">Our team will review and approve your account</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-blue-600 font-semibold text-sm">3</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Submit Games</p>
+                    <p className="text-sm text-gray-600">Once approved, start submitting retro mobile games</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-blue-600 font-semibold text-sm">4</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Post-Moderation Publication</p>
+                    <p className="text-sm text-gray-600">Your submissions are published after admin review</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Admin/Researcher Card */}
+            <div className="bg-white rounded-2xl shadow-lg border border-red-100 p-8 hover:shadow-xl transition-shadow">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900">For Admins & Researchers</h3>
+              </div>
+              <div className="space-y-4 text-gray-700">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-red-600 font-semibold text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Direct Login Access</p>
+                    <p className="text-sm text-gray-600">Use your admin/researcher credentials provided by staff</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-red-600 font-semibold text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Manage Game Database</p>
+                    <p className="text-sm text-gray-600">Add, edit, and organize retro mobile games</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-red-600 font-semibold text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Review Submissions</p>
+                    <p className="text-sm text-gray-600">Approve or reject user submissions for publication</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <span className="text-red-600 font-semibold text-sm">✓</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">System Administration</p>
+                    <p className="text-sm text-gray-600">Full access to analytics and user management tools</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Login Form Section */}
+          <div className="flex justify-center">
+            <div className="w-full max-w-md relative">
+          {/* Login Form Section */}
+          <div className="flex justify-center">
+            <div className="w-full max-w-md relative">
           {/* Login Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 relative overflow-hidden">
             {/* Subtle gradient overlay */}
@@ -170,8 +275,9 @@ export default function Login() {
               </p>
             </div>
           </div>
+            </div>
+          </div>
         </div>
-      </div>
       {showCreateAccountModal && <CreateAccountModal onClose={() => setShowCreateAccountModal(false)} />}
     </>
   );
