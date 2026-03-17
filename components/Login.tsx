@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Eye, EyeOff, Gamepad2, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import CreateAccountModal from './CreateAccountModal';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,7 +107,11 @@ export default function Login() {
                       />
                       <span className="ml-2 text-sm text-gray-600">Remember me</span>
                     </label>
-                    <button type="button" className="text-sm text-red-600 hover:text-red-700 font-medium transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPasswordModal(true)}
+                      className="text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
+                    >
                       Forgot password?
                     </button>
                   </div>
@@ -247,6 +253,9 @@ export default function Login() {
         </div>
       </div>
       {showCreateAccountModal && <CreateAccountModal onClose={() => setShowCreateAccountModal(false)} />}
+      {showForgotPasswordModal && (
+        <ForgotPasswordModal onClose={() => setShowForgotPasswordModal(false)} />
+      )}
     </>
   );
 }

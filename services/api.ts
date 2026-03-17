@@ -365,5 +365,34 @@ export const UserAPI = {
     } catch (error) {
       throw error;
     }
+  },
+
+  /**
+   * Sends password reset request to the backend.
+   *
+   * Backend should handle email delivery or token generation.
+   */
+  forgotPassword: async (email: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/user/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      if (res.ok) {
+        return true;
+      }
+
+      if (res.status === 404) {
+        // Email not found but do not reveal this to the user in production.
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('forgotPassword request failed', error);
+      return false;
+    }
   }
 };
